@@ -7,9 +7,6 @@
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch server.js"
-     // You might add a development script like above using Node's built-in watch flag
-     // Or install nodemon as a devDependency: npm install --save-dev nodemon
-     // and use: "dev": "nodemon server.js"
   },
   "author": "HARSH ANIL TUTI",
   "license": "MIT", // Or MIT, etc.
