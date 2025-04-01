@@ -183,7 +183,7 @@ socket.on('connect_error', (err) => {
 });
 
 socket.on('initialState', (torrents) => {
-    console.log('Received initial state:', torrents);
+    console.log('[WS RX] Received initialState:', JSON.stringify(torrents.map(t => ({ hash: t.infoHash, name: t.name, done: t.done })), null, 2));
     torrentsList.innerHTML = ''; // Clear previous items (like old placeholder)
      if (loadingPlaceholder) {
          torrentsList.appendChild(loadingPlaceholder); // Re-add placeholder temporarily
