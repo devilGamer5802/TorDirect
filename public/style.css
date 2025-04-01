@@ -6,8 +6,22 @@ body {
     color: #333;
 }
 
-h1, h2 {
+h1 {
+    text-align: center;
+    color: #444;
+}
+h1 .subtitle {
+    font-size: 0.6em;
+    color: #777;
+    display: block;
+}
+
+
+h2 {
     color: #555;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
 }
 
 .add-torrent, .torrent-list {
@@ -18,35 +32,56 @@ h1, h2 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+#add-torrent-form {
+    display: flex;
+    margin-bottom: 10px;
+}
+
 #add-torrent-form input[type="text"] {
-    width: calc(100% - 110px);
+    flex-grow: 1;
     padding: 10px;
     margin-right: 10px;
     border: 1px solid #ccc;
     border-radius: 3px;
+    font-size: 1em;
 }
 
-#add-torrent-form button, .torrent-item button {
-    padding: 10px 15px;
+#add-torrent-form button, .torrent-item button, .file-actions button, .file-actions a {
+    padding: 8px 15px; /* Slightly smaller */
     background-color: #5cb85c;
     color: white;
     border: none;
     border-radius: 3px;
     cursor: pointer;
+    text-decoration: none; /* For links styled as buttons */
+    display: inline-block; /* For links styled as buttons */
+     font-size: 0.9em;
+     margin-left: 5px;
+     white-space: nowrap;
+}
+.file-actions button.stream-button, .file-actions a.download-link {
+    padding: 4px 8px; /* Smaller for file actions */
+    font-size: 0.8em;
 }
 
-#add-torrent-form button:hover, .torrent-item button:hover {
+
+#add-torrent-form button:hover, .torrent-item button:hover, .file-actions button:hover, .file-actions a:hover {
     background-color: #4cae4c;
 }
 
-.torrent-item button.remove {
-     background-color: #d9534f;
-}
-.torrent-item button.remove:hover {
-     background-color: #c9302c;
+#add-torrent-form button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
 }
 
+.status-message {
+    font-size: 0.9em;
+    color: #888;
+}
+.status-message.success { color: green; }
+.status-message.error { color: red; }
 
+/* Torrent List */
 #torrents {
     list-style: none;
     padding: 0;
@@ -54,24 +89,35 @@ h1, h2 {
 
 .torrent-item {
     background: #e9e9e9;
-    margin-bottom: 10px;
+    margin-bottom: 15px; /* Increased spacing */
     padding: 15px;
     border-radius: 4px;
     border: 1px solid #ddd;
+    transition: opacity 0.3s ease-in-out;
+    position: relative; /* For potential absolute positioned elements */
 }
+.torrent-item.is-done { border-left: 5px solid #5cb85c; }
+.torrent-item.is-error { border-left: 5px solid #d9534f; }
+.torrent-item.is-stalled { border-left: 5px solid #f0ad4e; }
 
 .torrent-item h3 {
     margin-top: 0;
     margin-bottom: 10px;
     font-size: 1.1em;
-    word-break: break-all; /* Prevent long names from breaking layout */
+    word-break: break-all;
 }
 
 .torrent-item .info {
     font-size: 0.9em;
     color: #666;
     margin-bottom: 10px;
+    line-height: 1.4;
 }
+.torrent-item .info span { margin-right: 5px; }
+.torrent-item .info .status { font-weight: bold; }
+.torrent-item .info .status.error { color: #d9534f; }
+.torrent-item .info .status.done { color: #5cb85c; }
+
 
 .torrent-item .progress-bar-container {
     background-color: #ddd;
@@ -82,23 +128,136 @@ h1, h2 {
 }
 
 .torrent-item .progress-bar {
-    background-color: #5bc0de;
+    background-color: #5bc0de; /* Blue */
     height: 100%;
-    width: 0%; /* Updated by JS */
+    width: 0%;
     text-align: center;
     color: white;
     line-height: 20px;
     font-size: 0.8em;
-    transition: width 0.2s ease-in-out;
+    transition: width 0.3s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
 }
+.torrent-item .progress-bar.done { background-color: #5cb85c; /* Green */ }
+.torrent-item .progress-bar.error { background-color: #d9534f; /* Red */ }
 
 .torrent-item .actions button {
-     margin-right: 5px;
-     font-size: 0.9em;
-     padding: 5px 10px;
+     background-color: #d9534f; /* Red for remove */
+     margin-left: 10px;
+}
+.torrent-item .actions button:hover {
+     background-color: #c9302c;
+}
+.torrent-item .actions button:disabled {
+     background-color: #aaa;
+     cursor: not-allowed;
+}
+
+
+.info-hash {
+    font-size: 0.7em;
+    color: #aaa;
+    margin-top: 10px;
+    word-break: break-all;
 }
 
 .loading-placeholder, .error-message {
     color: #888;
     font-style: italic;
+    padding: 15px;
+}
+
+/* File List Styling */
+.file-list-container {
+    margin-top: 15px;
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+}
+.file-list-container summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 5px;
+}
+.file-list {
+    list-style: none;
+    padding-left: 0;
+    font-size: 0.9em;
+    max-height: 200px; /* Limit height */
+    overflow-y: auto; /* Add scroll */
+    border: 1px solid #eee;
+    padding: 10px;
+    background-color: #fdfdfd;
+    border-radius: 3px;
+}
+.file-item {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.file-item:last-child { border-bottom: none; }
+
+.file-info .file-name {
+     word-break: break-all;
+     margin-right: 10px;
+     flex-grow: 1;
+}
+.file-info .file-size {
+     color: #888;
+     font-size: 0.9em;
+     white-space: nowrap;
+}
+.file-actions { display: flex; align-items: center;}
+
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 800px;
+    border-radius: 5px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#player-container video,
+#player-container audio {
+    max-width: 100%; /* Responsive player */
+    display: block;
+    margin-top: 15px;
+    background-color: #000; /* Black background for player */
 }
