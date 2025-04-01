@@ -1,0 +1,35 @@
+6. Setup and Run:
+
+Persistent Disk: Ensure you have a Render plan with Persistent Disk enabled. Go to your Render Service -> Disks -> Add Disk. Set the Mount Path to something like /data/torrents (or keep /var/data if you prefer, just be consistent).
+
+Environment Variable: Go to your Render Service -> Environment -> Add Environment Variable:
+
+Key: DOWNLOAD_PATH
+
+Value: /data/torrents (or /var/data - must match the Mount Path exactly!)
+
+Install: Run npm install in your project directory locally.
+
+Commit & Push: Add all changes (package.json, package-lock.json, server.js, public/*) to Git and push to your repository.
+
+Deploy: Trigger a new deployment on Render. Monitor the logs for successful startup and the [CONFIG] lines showing the correct DOWNLOAD_PATH.
+
+How to Use:
+
+Access your deployed app's URL.
+
+Paste a magnet link and click "Add Magnet".
+
+The torrent will appear, showing progress and peers.
+
+Once metadata is loaded, a "Files" section will appear (you might need to click the <summary> triangle).
+
+Each file will have:
+
+Stream: If it looks like a video/audio file, clicking this opens the modal player and starts streaming using the /api/torrents/:infoHash/stream/:fileIndex route (which supports seeking).
+
+Download: Clicking this link uses the /api/torrents/:infoHash/download/:fileIndex route to trigger a direct download of the file.
+
+Click "Remove" to delete a torrent from the client and remove its entry from the persistence file (file deletion on disk is optional and currently commented out in server.js).
+
+This version provides a much richer experience, closer to a functional torrent web client. Remember that performance and reliability depend on the torrent health (seeders/peers) and your server resources.
