@@ -14,7 +14,7 @@
     "cors": "^2.8.5",          
     "express": "^5.1.0",     
     "socket.io": "^4.8.1",    
-    "webtorrent": "^2.5.193"   
+    "webtorrent": "^2.5.193",   
     "parse-torrent-uri": "^11.0.18"
   },
   "engines": {
