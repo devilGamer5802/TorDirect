@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Render Torrent Web</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Render Torrent Web</h1>
+
+    <div class="add-torrent">
+        <h2>Add Torrent</h2>
+        <form id="add-torrent-form">
+            <input type="text" id="magnet-uri" placeholder="Paste Magnet URI" required>
+            <button type="submit">Add Magnet</button>
+        </form>
+        <!-- Basic file upload - Needs backend handling (more complex) -->
+        <!--
+        <form id="add-torrent-file-form">
+             <input type="file" id="torrent-file" accept=".torrent">
+             <button type="submit">Add Torrent File</button>
+        </form>
+        -->
+    </div>
+
+    <div class="torrent-list">
+        <h2>Active Torrents</h2>
+        <ul id="torrents">
+            <!-- Torrent items will be added here by JavaScript -->
+            <li class="loading-placeholder">Loading torrents...</li>
+        </ul>
+    </div>
+
+    <!-- Include Socket.IO client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
