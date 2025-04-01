@@ -9,12 +9,12 @@
     "dev": "node --watch server.js"
   },
   "author": "HARSH ANIL TUTI",
-  "license": "MIT", // Or MIT, etc.
+  "license": "MIT", 
   "dependencies": {
-    "cors": "^2.8.5",          // For enabling CORS
-    "express": "^5.1.0",     // Web framework
-    "socket.io": "^4.8.1",    // WebSocket library
-    "webtorrent": "^2.5.193"   // Torrent client library
+    "cors": "^2.8.5",          
+    "express": "^5.1.0",     
+    "socket.io": "^4.8.1",    
+    "webtorrent": "^2.5.193"   
     "parse-torrent-uri": "^11.0.18"
   },
   "engines": {
