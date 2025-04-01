@@ -11,17 +11,16 @@
      // Or install nodemon as a devDependency: npm install --save-dev nodemon
      // and use: "dev": "nodemon server.js"
   },
-  "author": "Your Name (Or leave blank)",
-  "license": "ISC", // Or MIT, etc.
+  "author": "HARSH ANIL TUTI",
+  "license": "MIT", // Or MIT, etc.
   "dependencies": {
     "cors": "^2.8.5",          // For enabling CORS
-    "express": "^4.18.2",     // Web framework
-    "socket.io": "^4.7.4",    // WebSocket library
-    "webtorrent": "^2.1.33"   // Torrent client library
-    // Optional but recommended for robust magnet parsing:
-    // "parse-torrent-uri": "^7.0.0"
+    "express": "^5.1.0",     // Web framework
+    "socket.io": "^4.8.1",    // WebSocket library
+    "webtorrent": "^2.5.193"   // Torrent client library
+    "parse-torrent-uri": "^11.0.18"
   },
   "engines": {
-    "node": ">=18.0.0" // Specify Node.js version compatibility (adjust as needed)
+    "node": ">=18.18.0 <19.0.0"
   }
 }
