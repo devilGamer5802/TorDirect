@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const WebTorrent = require('webtorrent');
+const parseTorrent = require('parse-torrent');
 const path = require('path');
 const cors = require('cors'); // Include CORS
 
@@ -142,6 +143,9 @@ app.post('/api/torrents/add', (req, res) => {
     const { magnetURI } = req.body;
     if (!magnetURI || typeof magnetURI !== 'string') {
         return res.status(400).json({ error: 'Magnet URI is required.' });
+        let parsed;
+    try {
+        parsed = parseTorrent(magnetURI);
     }
 
     console.log(`Attempting to add torrent: ${magnetURI.substring(0, 50)}...`);
@@ -155,6 +159,8 @@ app.post('/api/torrents/add', (req, res) => {
         if (client.get(parsed.infoHash)) {
             console.log(`Torrent already added: ${parsed.infoHash}`);
             return res.status(409).json({ message: 'Torrent already added.', infoHash: parsed.infoHash });
+        if (!parsed || !parsed.infoHash) {
+            throw new Error("Invalid or incomplete Magnet URI");
         }
     } catch (err) {
          console.error("Error parsing magnet URI:", err);
