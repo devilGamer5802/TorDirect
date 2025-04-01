@@ -1,0 +1,27 @@
+{
+  "name": "TorDirect",
+  "version": "1.0.0",
+  "description": "A simple direct torrent web application for Render.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch server.js"
+     // You might add a development script like above using Node's built-in watch flag
+     // Or install nodemon as a devDependency: npm install --save-dev nodemon
+     // and use: "dev": "nodemon server.js"
+  },
+  "author": "Your Name (Or leave blank)",
+  "license": "ISC", // Or MIT, etc.
+  "dependencies": {
+    "cors": "^2.8.5",          // For enabling CORS
+    "express": "^4.18.2",     // Web framework
+    "socket.io": "^4.7.4",    // WebSocket library
+    "webtorrent": "^2.1.33"   // Torrent client library
+    // Optional but recommended for robust magnet parsing:
+    // "parse-torrent-uri": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0" // Specify Node.js version compatibility (adjust as needed)
+  }
+}
