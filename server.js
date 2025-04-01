@@ -286,6 +286,7 @@ const parseTorrent = require('parse-torrent');
         io.on('connection', (socket) => {
             console.log(`[WS] Client connected: ${socket.id}`);
             const currentTorrents = client.torrents.map(getTorrentInfo);
+            console.log('[WS] Generating initialState:', JSON.stringify(currentTorrents.map(t => ({ hash: t.infoHash, name: t.name, done: t.done })), null, 2));
             socket.emit('initialState', currentTorrents);
             console.log(`[WS] Sent initial state (${currentTorrents.length} torrents) to ${socket.id}`);
             socket.on('disconnect', (reason) => {
