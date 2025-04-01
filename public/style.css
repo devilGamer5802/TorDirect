@@ -1,0 +1,104 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1, h2 {
+    color: #555;
+}
+
+.add-torrent, .torrent-list {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#add-torrent-form input[type="text"] {
+    width: calc(100% - 110px);
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+#add-torrent-form button, .torrent-item button {
+    padding: 10px 15px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+#add-torrent-form button:hover, .torrent-item button:hover {
+    background-color: #4cae4c;
+}
+
+.torrent-item button.remove {
+     background-color: #d9534f;
+}
+.torrent-item button.remove:hover {
+     background-color: #c9302c;
+}
+
+
+#torrents {
+    list-style: none;
+    padding: 0;
+}
+
+.torrent-item {
+    background: #e9e9e9;
+    margin-bottom: 10px;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.torrent-item h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    word-break: break-all; /* Prevent long names from breaking layout */
+}
+
+.torrent-item .info {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.torrent-item .progress-bar-container {
+    background-color: #ddd;
+    border-radius: 3px;
+    overflow: hidden;
+    height: 20px;
+    margin-bottom: 10px;
+}
+
+.torrent-item .progress-bar {
+    background-color: #5bc0de;
+    height: 100%;
+    width: 0%; /* Updated by JS */
+    text-align: center;
+    color: white;
+    line-height: 20px;
+    font-size: 0.8em;
+    transition: width 0.2s ease-in-out;
+}
+
+.torrent-item .actions button {
+     margin-right: 5px;
+     font-size: 0.9em;
+     padding: 5px 10px;
+}
+
+.loading-placeholder, .error-message {
+    color: #888;
+    font-style: italic;
+}
