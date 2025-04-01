@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Render Torrent Web</title>
+    <title>TorDirect - Torrent Streamer</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Render Torrent Web</h1>
+    <h1>TorDirect <span class="subtitle">Torrent Streamer</span></h1>
 
     <div class="add-torrent">
         <h2>Add Torrent</h2>
@@ -15,13 +15,7 @@
             <input type="text" id="magnet-uri" placeholder="Paste Magnet URI" required>
             <button type="submit">Add Magnet</button>
         </form>
-        <!-- Basic file upload - Needs backend handling (more complex) -->
-        <!--
-        <form id="add-torrent-file-form">
-             <input type="file" id="torrent-file" accept=".torrent">
-             <button type="submit">Add Torrent File</button>
-        </form>
-        -->
+        <p class="status-message" id="add-status"></p>
     </div>
 
     <div class="torrent-list">
@@ -32,8 +26,21 @@
         </ul>
     </div>
 
+    <!-- Streaming Player Modal -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closePlayer()">×</span>
+            <h3 id="player-title">Streaming File</h3>
+            <div id="player-container">
+                <!-- Video/Audio tag will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+
     <!-- Include Socket.IO client library -->
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Include Frontend Logic -->
     <script src="script.js"></script>
 </body>
 </html>
