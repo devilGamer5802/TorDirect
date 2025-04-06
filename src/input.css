@@ -1,4 +1,4 @@
-/* src/input.css - Using default Tailwind colors */
+/* src/input.css - Using only default Tailwind colors */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,10 +20,8 @@
 
 /* Style the progress bar using standard Tailwind colors */
 progress {
-  /* Apply standard layout/sizing utilities */
-  @apply block w-full rounded-full overflow-hidden h-3;
-  /* Apply default theme colors */
-  @apply bg-gray-700 border border-gray-600; /* Default dark gray background, slightly lighter border */
+  /* Apply standard layout/sizing utilities & default colors */
+  @apply block w-full rounded-full overflow-hidden h-3 bg-gray-700 border border-gray-600;
 }
 
 progress::-webkit-progress-bar {
@@ -42,5 +40,5 @@ progress::-moz-progress-bar { /* Firefox */
 /* Drag over effect using standard Tailwind colors */
 .drag-over {
     /* Apply standard utilities & default colors */
-    @apply border-dashed border-2 border-blue-500 bg-gray-700; /* Default blue border, dark gray bg */
+    @apply border-dashed border-2 border-blue-500 bg-gray-700;
 }
