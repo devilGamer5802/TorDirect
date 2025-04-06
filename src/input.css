@@ -3,49 +3,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Apply custom component styles within the 'components' layer */
-@layer components {
-  /* Style the scrollbar for a more integrated dark theme look */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-secondary-dark rounded; /* Use @apply with custom theme class */
-    /* border-radius: 4px; */ /* Tailwind 'rounded' is often sufficient */
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-tertiary-dark rounded; /* Use @apply */
-    /* border-radius: 4px; */
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary-accent; /* Use @apply */
-  }
+/* Style the scrollbar using theme() */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background-color: theme('colors.secondary-dark');
+  border-radius: 4px; /* Standard CSS is fine here */
+}
+::-webkit-scrollbar-thumb {
+  background-color: theme('colors.tertiary-dark');
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: theme('colors.primary-accent');
+}
 
-  /* Style the progress bar */
-  progress {
-    /* Apply standard utilities and custom theme classes */
-    @apply block w-full rounded-full overflow-hidden h-3 bg-secondary-dark border border-tertiary-dark;
-  }
+/* Style the progress bar using theme() for colors */
+progress {
+  /* Apply standard layout/sizing utilities */
+  @apply block w-full rounded-full overflow-hidden h-3;
+  /* Apply custom theme colors/styles using theme() */
+  background-color: theme('colors.secondary-dark');
+  border: 1px solid theme('colors.tertiary-dark');
+}
 
-  progress::-webkit-progress-bar {
-    @apply bg-secondary-dark rounded-full;
-  }
+progress::-webkit-progress-bar {
+  @apply rounded-full; /* Standard utility */
+  background-color: theme('colors.secondary-dark'); /* Custom color via theme() */
+}
 
-  progress::-webkit-progress-value {
-    /* Apply standard utilities and custom theme class */
-    @apply bg-primary-accent rounded-full transition-all duration-300 ease-out;
-  }
+progress::-webkit-progress-value {
+  /* Standard utilities */
+  @apply rounded-full transition-all duration-300 ease-out;
+  /* Custom color via theme() */
+  background-color: theme('colors.primary-accent');
+}
 
-  progress::-moz-progress-bar { /* Firefox */
-    /* Apply standard utilities and custom theme class */
-    @apply bg-primary-accent rounded-full;
-    /* Transitions might still be less smooth in FF for progress */
-  }
+progress::-moz-progress-bar { /* Firefox */
+  @apply rounded-full; /* Standard utility */
+   /* Custom color via theme() */
+  background-color: theme('colors.primary-accent');
+}
 
-  /* Drag over effect */
-  .drag-over {
-      /* Use @apply with custom theme classes */
-      @apply border-dashed border-2 border-primary-accent bg-secondary-dark;
-  }
-} /* End of @layer components */
+/* Drag over effect using theme() for colors */
+.drag-over {
+    /* Apply standard utilities */
+    @apply border-dashed border-2;
+    /* Apply custom theme colors using theme() */
+    border-color: theme('colors.primary-accent');
+    background-color: theme('colors.secondary-dark');
+}
