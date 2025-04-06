@@ -4,10 +4,7 @@
 @tailwind utilities;
 /* stylelint-enable at-rule-no-unknown */
 
-/* Custom base styles or component overrides can go here */
-body {
-  @apply bg-primary-dark text-primary-text font-sans antialiased;
-}
+
 
 /* Style the scrollbar for a more integrated dark theme look */
 ::-webkit-scrollbar {
@@ -28,28 +25,19 @@ body {
 
 /* Style the progress bar */
 progress {
-  border-radius: 9999px; /* Fully rounded */
-  overflow: hidden; /* Ensure value stays within bounds */
-  height: 0.75rem; /* Tailwind h-3 equivalent */
-  background-color: theme('colors.secondary-dark'); /* Track color */
-  border: 1px solid theme('colors.tertiary-dark'); /* Subtle border */
+   @apply rounded-full overflow-hidden h-3 bg-secondary-dark border border-tertiary-dark;
 }
 
 progress::-webkit-progress-bar {
-  background-color: theme('colors.secondary-dark');
-  border-radius: 9999px;
+  @apply bg-secondary-dark rounded-full;
 }
 
 progress::-webkit-progress-value {
-  background-color: theme('colors.primary-accent');
-  border-radius: 9999px;
-  transition: width 0.3s ease;
+  @apply bg-primary-accent rounded-full transition-all duration-300 ease-out;
 }
 
 progress::-moz-progress-bar { /* Firefox */
-  background-color: theme('colors.primary-accent');
-  border-radius: 9999px;
-  transition: width 0.3s ease;
+  @apply bg-primary-accent rounded-full;
 }
 
 /* Drag over effect */
