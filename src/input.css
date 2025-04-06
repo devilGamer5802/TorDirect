@@ -3,69 +3,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Style the scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  /* theme() is good here */
-  background: theme('colors.secondary-dark');
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-  /* theme() is good here */
-  background: theme('colors.tertiary-dark');
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  /* theme() is good here */
-  background: theme('colors.primary-accent');
-}
+/* Apply custom component styles within the 'components' layer */
+@layer components {
+  /* Style the scrollbar for a more integrated dark theme look */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary-dark rounded; /* Use @apply with custom theme class */
+    /* border-radius: 4px; */ /* Tailwind 'rounded' is often sufficient */
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-tertiary-dark rounded; /* Use @apply */
+    /* border-radius: 4px; */
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-accent; /* Use @apply */
+  }
 
-/* --- MODIFIED SECTION START --- */
+  /* Style the progress bar */
+  progress {
+    /* Apply standard utilities and custom theme classes */
+    @apply block w-full rounded-full overflow-hidden h-3 bg-secondary-dark border border-tertiary-dark;
+  }
 
-/* Style the progress bar */
-progress {
-  /* Apply standard utilities */
-  @apply block w-full rounded-full overflow-hidden h-3; /* Added block, w-full */
-  /* Apply custom theme colors/styles using theme() */
-  background-color: theme('colors.secondary-dark');
-  border: 1px solid theme('colors.tertiary-dark');
-  /* Remove theme-dependent classes from @apply: bg-secondary-dark, border-tertiary-dark */
-}
+  progress::-webkit-progress-bar {
+    @apply bg-secondary-dark rounded-full;
+  }
 
-progress::-webkit-progress-bar {
-  @apply rounded-full; /* Keep standard utilities */
-  /* Apply custom theme color using theme() */
-  background-color: theme('colors.secondary-dark');
-  /* Remove theme-dependent class from @apply: bg-secondary-dark */
-}
+  progress::-webkit-progress-value {
+    /* Apply standard utilities and custom theme class */
+    @apply bg-primary-accent rounded-full transition-all duration-300 ease-out;
+  }
 
-progress::-webkit-progress-value {
-  @apply rounded-full transition-all duration-300 ease-out; /* Keep standard utilities */
-   /* Apply custom theme color using theme() */
-  background-color: theme('colors.primary-accent');
-  /* Remove theme-dependent class from @apply: bg-primary-accent */
-}
+  progress::-moz-progress-bar { /* Firefox */
+    /* Apply standard utilities and custom theme class */
+    @apply bg-primary-accent rounded-full;
+    /* Transitions might still be less smooth in FF for progress */
+  }
 
-progress::-moz-progress-bar { /* Firefox */
-  @apply rounded-full; /* Keep standard utilities */
-   /* Apply custom theme color using theme() */
-  background-color: theme('colors.primary-accent');
-  /* Remove theme-dependent class from @apply: bg-primary-accent */
-  /* Note: Firefox doesn't respect border-radius on the ::-moz-progress-bar as reliably */
-  /* The transition might also need JS intervention in Firefox sometimes */
-}
-
-/* --- MODIFIED SECTION END --- */
-
-
-/* Drag over effect */
-.drag-over {
-    /* Apply standard utilities that don't use custom theme colors */
-    @apply border-dashed border-2;
-    /* Apply custom theme colors using theme() */
-    border-color: theme('colors.primary-accent');
-    background-color: theme('colors.secondary-dark');
-}
+  /* Drag over effect */
+  .drag-over {
+      /* Use @apply with custom theme classes */
+      @apply border-dashed border-2 border-primary-accent bg-secondary-dark;
+  }
+} /* End of @layer components */
