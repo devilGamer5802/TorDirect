@@ -4,8 +4,8 @@
     "description": "Client-side WebTorrent streaming app with a minimal dark UI.",
     "main": "public/script.js",
     "scripts": {
-      "dev": "tailwindcss -i ./src/input.css -o ./public/style.css --watch",
-      "build": "NODE_ENV=production tailwindcss -i ./src/input.css -o ./public/style.css --minify"
+        "dev": "tailwindcss -i ./src/input.css -o ./public/style.css --watch",
+        "build": "NODE_ENV=production tailwindcss -i ./src/input.css -o ./public/style.css --minify"
     },
     "keywords": [
       "webtorrent",
