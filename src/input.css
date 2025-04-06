@@ -63,6 +63,9 @@ progress::-moz-progress-bar { /* Firefox */
 
 /* Drag over effect */
 .drag-over {
-    /* This should still be fine as it's a custom component class */
-    @apply border-dashed border-2 border-primary-accent bg-secondary-dark;
+    /* Apply standard utilities that don't use custom theme colors */
+    @apply border-dashed border-2;
+    /* Apply custom theme colors using theme() */
+    border-color: theme('colors.primary-accent');
+    background-color: theme('colors.secondary-dark');
 }
