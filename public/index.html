@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebTorrent Client</title>
+    <link href="style.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Include WebTorrent library -->
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@2/webtorrent.min.js"></script>
+</head>
+<body class="bg-primary-dark text-primary-text min-h-screen flex flex-col items-center pt-8 md:pt-16 px-4">
+
+    <div id="drop-zone" class="w-full max-w-3xl transition-all duration-300 ease-in-out">
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-semibold mb-2">WebTorrent Client</h1>
+            <p class="text-secondary-text">Stream and download torrents directly in your browser.</p>
+        </header>
+
+        <main class="w-full">
+            <!-- Input Section -->
+            <section id="input-section" class="bg-secondary-dark p-6 rounded-lg shadow-lg mb-8">
+                <form id="torrent-form">
+                    <label for="torrent-id" class="block text-sm font-medium text-primary-text mb-2">Enter Magnet Link or Drag & Drop .torrent File</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="torrent-id" name="torrent-id" placeholder="magnet:?xt=urn:btih:..." class="flex-grow bg-primary-dark border border-tertiary-dark text-primary-text rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent placeholder-secondary-text">
+                        <button type="submit" class="bg-primary-accent hover:bg-opacity-80 text-white font-semibold py-2 px-5 rounded-md transition duration-200 ease-in-out">Add Torrent</button>
+                    </div>
+                </form>
+                <div class="mt-4 text-center">
+                    <label for="torrent-file-upload" class="cursor-pointer text-primary-accent hover:underline">
+                        Or click here to upload a .torrent file
+                    </label>
+                    <input type="file" id="torrent-file-upload" accept=".torrent" class="hidden">
+                </div>
+                 <div id="status-message" class="mt-4 text-center text-secondary-text text-sm"></div>
+            </section>
+
+            <!-- Torrent Details Section (Hidden Initially) -->
+            <section id="torrent-details" class="hidden bg-secondary-dark p-6 rounded-lg shadow-lg">
+                <h2 id="torrent-name" class="text-xl font-semibold mb-4 truncate">Torrent Name</h2>
+
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm text-secondary-text mb-1">
+                        <span>Progress</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <progress id="progress-bar" value="0" max="100" class="w-full"></progress>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm mb-6">
+                    <div class="text-center sm:text-left">
+                        <p class="text-secondary-text">Speed Down</p>
+                        <p id="speed-down" class="font-medium">0 B/s</p>
+                    </div>
+                     <div class="text-center sm:text-left">
+                        <p class="text-secondary-text">Speed Up</p>
+                        <p id="speed-up" class="font-medium">0 B/s</p>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <p class="text-secondary-text">ETA</p>
+                        <p id="eta" class="font-medium">∞</p>
+                    </div>
+                    <div class="text-center sm:text-left">
+                        <p class="text-secondary-text">Peers</p>
+                        <p id="peers" class="font-medium">0</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-medium mb-3">Files</h3>
+                <ul id="file-list" class="space-y-2 max-h-96 overflow-y-auto border border-tertiary-dark rounded-md p-3">
+                    <!-- File items will be dynamically added here -->
+                </ul>
+            </section>
+
+            <!-- Media Player Section (Hidden Initially) -->
+            <section id="media-player-section" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+                 <div class="bg-secondary-dark rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+                    <div class="flex justify-between items-center p-3 border-b border-tertiary-dark">
+                         <h4 id="media-title" class="text-lg font-semibold text-primary-text truncate">Now Playing</h4>
+                         <button id="close-player-btn" class="text-secondary-text hover:text-primary-text text-2xl">&times;</button>
+                    </div>
+                    <div id="player-container" class="p-4 flex-grow flex items-center justify-center overflow-auto">
+                        <!-- Video/Audio element will be appended here -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
