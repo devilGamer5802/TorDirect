@@ -1,46 +1,68 @@
-/* stylelint-disable at-rule-no-unknown */
+/* src/input.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* stylelint-enable at-rule-no-unknown */
 
-
-
-/* Style the scrollbar for a more integrated dark theme look */
+/* Style the scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
+  /* theme() is good here */
   background: theme('colors.secondary-dark');
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb {
+  /* theme() is good here */
   background: theme('colors.tertiary-dark');
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  /* theme() is good here */
   background: theme('colors.primary-accent');
 }
 
+/* --- MODIFIED SECTION START --- */
+
 /* Style the progress bar */
 progress {
-   @apply rounded-full overflow-hidden h-3 bg-secondary-dark border border-tertiary-dark;
+  /* Apply standard utilities */
+  @apply block w-full rounded-full overflow-hidden h-3; /* Added block, w-full */
+  /* Apply custom theme colors/styles using theme() */
+  background-color: theme('colors.secondary-dark');
+  border: 1px solid theme('colors.tertiary-dark');
+  /* Remove theme-dependent classes from @apply: bg-secondary-dark, border-tertiary-dark */
 }
 
 progress::-webkit-progress-bar {
-  @apply bg-secondary-dark rounded-full;
+  @apply rounded-full; /* Keep standard utilities */
+  /* Apply custom theme color using theme() */
+  background-color: theme('colors.secondary-dark');
+  /* Remove theme-dependent class from @apply: bg-secondary-dark */
 }
 
 progress::-webkit-progress-value {
-  @apply bg-primary-accent rounded-full transition-all duration-300 ease-out;
+  @apply rounded-full transition-all duration-300 ease-out; /* Keep standard utilities */
+   /* Apply custom theme color using theme() */
+  background-color: theme('colors.primary-accent');
+  /* Remove theme-dependent class from @apply: bg-primary-accent */
 }
 
 progress::-moz-progress-bar { /* Firefox */
-  @apply bg-primary-accent rounded-full;
+  @apply rounded-full; /* Keep standard utilities */
+   /* Apply custom theme color using theme() */
+  background-color: theme('colors.primary-accent');
+  /* Remove theme-dependent class from @apply: bg-primary-accent */
+  /* Note: Firefox doesn't respect border-radius on the ::-moz-progress-bar as reliably */
+  /* The transition might also need JS intervention in Firefox sometimes */
 }
+
+/* --- MODIFIED SECTION END --- */
+
 
 /* Drag over effect */
 .drag-over {
+    /* This should still be fine as it's a custom component class */
     @apply border-dashed border-2 border-primary-accent bg-secondary-dark;
 }
