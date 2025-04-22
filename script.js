@@ -5,10 +5,9 @@ const logsDiv = document.getElementById('logs');
 const progressDiv = document.getElementById('progress');
 const peersDiv = document.getElementById('peers');
 const fileListUl = document.getElementById('fileList');
-const playerDiv = document.getElementById('player'); // Make sure this ID matches your HTML
+const playerDiv = document.getElementById('player'); 
 
 let client = null;
-
 function log(message) {
     console.log(message); 
     const time = new Date().toLocaleTimeString();
@@ -54,7 +53,6 @@ function formatTime(seconds) {
     }
 }
 
-
 function displayFiles(torrent) {
     fileListUl.innerHTML = ''; 
     playerDiv.innerHTML = '<h2>Streaming Player</h2>';
@@ -69,7 +67,6 @@ function displayFiles(torrent) {
     torrent.files.forEach((file, index) => {
         const li = document.createElement('li');
         li.textContent = `[${index + 1}] ${file.name} (${formatBytes(file.length)})`;
-
         const downloadButton = document.createElement('a');
         downloadButton.textContent = 'Download';
         downloadButton.href = '#';
@@ -84,7 +81,7 @@ function displayFiles(torrent) {
                 log("Error: Torrent instance not found for download.");
                 return;
             }
-            const fileToDownload = currentTorrent.files[index]; 
+            const fileToDownload = currentTorrent.files[index];
 
             if (!fileToDownload) {
                 log(`Error: File at index ${index} not found.`);
@@ -96,7 +93,7 @@ function displayFiles(torrent) {
             clickedButton.textContent = 'Generating...';
             clickedButton.style.pointerEvents = 'none';
             fileToDownload.getBlobURL((err, url) => {
-                clickedButton.style.pointerEvents = 'auto'; 
+                clickedButton.style.pointerEvents = 'auto';
                 if (err) {
                     log(`Error getting blob URL: ${err.message}`);
                     console.error("Blob URL Error:", err);
@@ -106,7 +103,6 @@ function displayFiles(torrent) {
                 log(`Download link ready for ${fileToDownload.name}`);
                 clickedButton.href = url;
                 clickedButton.textContent = 'Ready! Click again';
-                clickedButton.click();
             });
         });
         li.appendChild(downloadButton);
@@ -117,20 +113,20 @@ function displayFiles(torrent) {
             const streamButton = document.createElement('button');
             streamButton.textContent = 'Stream';
             streamButton.title = `Stream ${file.name}`;
-            streamButton.dataset.fileIndex = index;
+            streamButton.dataset.fileIndex = index; 
             streamButton.onclick = (e) => {
                  const clickedButton = e.target;
-                 const currentTorrent = client?.get(torrent.infoHash); 
+                 const currentTorrent = client?.get(torrent.infoHash);
                  if (!currentTorrent) {
                     log("Error: Torrent instance not found for streaming.");
                     return;
                  }
-                 const fileToStream = currentTorrent.files[index]; 
+                 const fileToStream = currentTorrent.files[index];
                   if (!fileToStream) {
                     log(`Error: File at index ${index} not found for streaming.`);
                     return;
                  }
-                streamFile(fileToStream, isStreamableVideo);
+                streamFile(fileToStream, isStreamableVideo); 
             };
             li.appendChild(streamButton);
         }
@@ -143,6 +139,7 @@ function streamFile(file, isVideo) {
     log(`Attempting to stream: ${file.name} (IsVideo: ${isVideo})`);
     playerDiv.innerHTML = '<h2>Streaming Player</h2>'; 
 
+    // Create media element
     const mediaElement = document.createElement(isVideo ? 'video' : 'audio');
     mediaElement.controls = true;
     mediaElement.autoplay = true; 
@@ -180,12 +177,10 @@ function streamFile(file, isVideo) {
      mediaElement.addEventListener('stalled', () => log(`${file.name} stalled (network?).`));
      mediaElement.addEventListener('playing', () => log(`Playback started for ${file.name}.`));
      mediaElement.addEventListener('progress', () => {
-         // Optional: Log buffering progress
          try {
             const buffered = mediaElement.buffered;
             if (buffered.length > 0) {
                 const bufferedEnd = buffered.end(buffered.length - 1);
-                console.log(`Buffer progress: ${bufferedEnd.toFixed(2)}s`);
             }
          } catch(e) { /* ignore potential errors reading buffer */ }
      });
@@ -244,13 +239,13 @@ function startTorrent(torrentId) {
 function initializeAndAddTorrent(torrentId) {
     log('Initializing new WebTorrent client...');
     try {
-        client = new WebTorrent();
+        client = new WebTorrent(); 
 
     } catch (err) {
         log(`*** FATAL: Failed to initialize WebTorrent client: ${err.message}`);
         console.error("WebTorrent Initialization Error:", err);
         progressDiv.innerHTML = 'Client Initialization Failed!';
-        return;
+        return; 
     }
 
 
@@ -263,23 +258,17 @@ function initializeAndAddTorrent(torrentId) {
 
     log('Adding torrent...');
     progressDiv.innerHTML = 'Adding torrent...';
-    peersDiv.innerText = 'Peers: 0';
+    peersDiv.innerText = 'Peers: 0'; 
 
     try {
         client.add(torrentId, {
-           // Optional: Set path if you were saving to filesystem (not applicable in browser like this)
-            path: '/downloads/'
-           // Optional: Announce list override per torrent
-            announce: ['wss://...']
-        }, torrent => { // The callback when the torrent is added (infohash known)
+        }, torrent => { 
             log(`Torrent added: ${torrent.name || 'Fetching Name...'} (${torrent.infoHash})`);
             log('Connecting to peers and fetching metadata (if needed)...');
             progressDiv.innerHTML = 'Connecting...';
             updateProgress(torrent); 
-
             fileListUl.innerHTML = '';
             playerDiv.innerHTML = '<h2>Streaming Player</h2>';
-
             torrent.on('metadata', () => {
                 log(`Metadata received for: ${torrent.name}`);
                 displayFiles(torrent);
@@ -306,8 +295,6 @@ function initializeAndAddTorrent(torrentId) {
                 log(`*** Torrent Error (${torrent.name}): ${err.message}`);
                 console.error("Torrent Error:", err);
                 progressDiv.innerHTML = `Error with torrent: ${torrent.name}`;
-                // Optionally try removing the torrent from the client if it's fatal?
-                client.remove(torrent.infoHash, removeErr => {...});
             });
 
             torrent.on('download', bytes => {
@@ -319,10 +306,8 @@ function initializeAndAddTorrent(torrentId) {
             });
 
              torrent.on('wire', (wire, addr) => {
-                 console.log(`Connected to peer: ${addr || 'Unknown Address'}`); // Can be very noisy
             });
              torrent.on('peer', (addr) => {
-                 console.log(`Discovered peer: ${addr}`); // Can be very noisy
              });
               torrent.on('noPeers', (announceType) => {
                 log(`No peers found via ${announceType}. Torrent may be stalled.`);
@@ -334,12 +319,11 @@ function initializeAndAddTorrent(torrentId) {
                 updateProgress(torrent);
                  progressDiv.innerHTML += "<br><b>Download Complete!</b>";
             });
-
             if (torrent.files && torrent.files.length > 0 && fileListUl.childElementCount === 0) {
                 log("Initial torrent object has files, displaying.");
                 displayFiles(torrent);
             }
-            updateProgress(torrent); 
+            updateProgress(torrent);
 
         });
 
@@ -355,7 +339,6 @@ startButton.addEventListener('click', () => {
     const file = torrentFileInput.files[0];
 
     if (file) {
-        log(`Selected file: ${file.name}`); // Logged in startTorrent now
         startTorrent(file);
         torrentIdInput.value = '';
         torrentFileInput.value = '';
@@ -364,7 +347,6 @@ startButton.addEventListener('click', () => {
              log('Invalid Magnet URI or InfoHash format.');
              return;
         }
-        log(`Using magnet/hash: ${torrentId.substring(0, 30)}...`); // Logged in startTorrent now
         startTorrent(torrentId);
         torrentFileInput.value = '';
     } else {
@@ -379,7 +361,7 @@ torrentIdInput.addEventListener('input', () => {
 });
 torrentFileInput.addEventListener('change', () => {
     if (torrentFileInput.files.length > 0 && torrentIdInput.value.trim() !== '') {
-        torrentIdInput.value = ''; 
+        torrentIdInput.value = '';
     }
 });
 
