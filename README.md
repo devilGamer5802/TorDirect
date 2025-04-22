@@ -1,6 +1,6 @@
 # WebTorrent Client - Browser-Based Torrenting
 
-A simple, clean, client-side web application for streaming and downloading torrents directly in your browser using WebTorrent. Features a minimal dark UI inspired by Cursor.io.
+A simple, clean, client-side web application for streaming and downloading torrents directly in your browser using WebTorrent. Features a minimal dark UI.
 
 **Features:**
 
@@ -17,15 +17,12 @@ A simple, clean, client-side web application for streaming and downloading torre
 **Technologies Used:**
 
 *   HTML5
-*   CSS3 (Tailwind CSS)
-*   JavaScript (ES6+)
+*   CSS
+*   JavaScript
 *   WebTorrent.js
 
 ## Setup and Development
 
-**Prerequisites:**
-
-*   Node.js and npm (or yarn) installed.
 
 **Steps:**
 
@@ -34,25 +31,4 @@ A simple, clean, client-side web application for streaming and downloading torre
     git clone <your-repo-url>
     cd webtorrent-client
     ```
-
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-    This installs WebTorrent and the development tools for Tailwind CSS.
-
-3.  **Start the development server (for Tailwind CSS):**
-    ```bash
-    npm run dev
-    ```
-    This command will watch the `src/input.css` file and automatically rebuild `public/style.css` whenever you make changes.
-
-4.  **Open `public/index.html` in your browser:**
-    You can simply open the file directly, or use a simple static file server like `live-server` (install via `npm install -g live-server` and run `live-server public/`).
-
-## Building for Production
-
-To generate a minified CSS file for deployment:
-
-```bash
-npm run build
+2. **Enjoy**
