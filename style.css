@@ -66,12 +66,22 @@ header {
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 40px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 15px;
 }
 
+.logo-image {
+    height: 45px; /* Set your desired logo height */
+    width: auto;   /* Let width adjust automatically to maintain aspect ratio */
+    display: block;
+}
 header h1 {
     font-size: 1.8em;
     font-weight: 600;
     color: #ffffff;
+    margin: 0;
 }
 
 /* Hero Section */
