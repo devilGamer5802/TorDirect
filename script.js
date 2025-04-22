@@ -200,80 +200,58 @@ function displayFiles(torrent) {
 }
 
 // Streams the given file into the player element using file.appendTo
-// Stream File (Using WebTorrent's file.appendTo - aligned with instant.io logic)
 function streamFile(file) {
-    // Ensure the target player element exists
     if (!playerDiv) {
-        log("Error: Player element (#player) not found. Cannot stream.");
+        log("Error: Player element not found. Cannot stream.");
         return;
     }
 
-    // Verify the necessary method exists on the file object
+    // Defensive check if appendTo method exists
     if (typeof file.appendTo !== 'function') {
-         log(`Error: Cannot stream ${file.name}. The 'appendTo' method is not available on this file object.`);
-         playerDiv.innerHTML = `<h2>Streaming Player</h2><p style="color:red;">Cannot stream "${file.name}". Streaming method unavailable.</p>`;
+         log(`Error: Cannot stream ${file.name}. appendTo method not available.`);
+         playerDiv.innerHTML = `<h2>Streaming Player</h2><p style="color:red;">Cannot stream "${file.name}". Method unavailable.</p>`;
          return;
     }
 
-    log(`Attempting to stream ${file.name} into playerDiv using file.appendTo()...`);
-    playerDiv.innerHTML = '<h2>Streaming Player</h2>'; // Clear previous content/errors
+    log(`Attempting to stream ${file.name} using file.appendTo()...`);
+    playerDiv.innerHTML = '<h2>Streaming Player</h2>'; // Clear previous content
 
-    // --- Call appendTo, targeting playerDiv ---
-    // We pass the target DOM element directly.
-    // The callback function handles success or failure of appending/setup.
-    file.appendTo(playerDiv, function (err, elem) { // Using standard function for clarity
+    // Use WebTorrent's built-in method to stream to the element
+    file.appendTo(playerDiv, (err, elem) => { // `elem` is the <video> or <audio> element created
         if (err) {
-            // This 'err' signifies a problem *setting up* the stream with appendTo
-            log(`Error setting up stream for ${file.name} via appendTo: ${err.message}`);
-            console.error("Streaming Setup Error (appendTo):", err);
-
-            // Provide feedback to the user within the player div
-            let userErrorMessage = `<p style="color:red;">Could not stream "${file.name}".`;
+            // Handle errors during streaming setup or playback initialization
+            log(`Error streaming ${file.name}: ${err.message}`);
+            console.error("Streaming Error (appendTo):", err);
+            // Provide user feedback about the error
             if (err.message.toLowerCase().includes('unsupported file type') ||
                 err.message.toLowerCase().includes('cannot play media') ||
                 err.name === 'NotSupportedError' ) {
-                 userErrorMessage = `<p style="color:yellow;">Cannot stream "${file.name}". The browser likely does not support this file's format or codec.</p>`;
+                 playerDiv.innerHTML += `<p style="color:yellow;">Cannot stream "${file.name}". The browser does not support this file format.</p>`;
             } else {
-                 userErrorMessage += ` (${err.message})</p>`;
+                 playerDiv.innerHTML += `<p style="color:red;">Could not stream "${file.name}". ${err.message}</p>`;
             }
-            playerDiv.innerHTML += userErrorMessage;
-            return; // Stop if setup failed
+            return; // Stop if streaming fails
         }
 
-        // If err is null, appendTo successfully created and appended the element (`elem`)
-        log(`Successfully appended media element for ${file.name}. Streaming should begin.`);
-
-        // `elem` here IS the <video> or <audio> tag
-        if (elem) {
-            // Style the created media player
+        // Streaming started successfully
+        log(`Streaming ${file.name} in the player area.`);
+        if (elem) { // Apply styles to the dynamically created element
             elem.style.maxWidth = '100%';
             elem.style.display = 'block';
             elem.style.marginTop = '10px';
-            elem.style.backgroundColor = '#000'; // Background during load
+            elem.style.backgroundColor = '#000'; // Show black bg before video loads
 
-            // Add a listener to the specific media element to catch playback errors
-            // that might occur *after* the initial appendTo setup
-            elem.addEventListener('error', (e) => {
-                const mediaError = elem.error; // Get the MediaError object
-                const errorCode = mediaError ? mediaError.code : 'N/A';
-                const errorMsg = mediaError ? mediaError.message : 'Unknown playback error.';
-                log(`Runtime Media Playback Error for ${file.name}: Code ${errorCode}, Message: ${errorMsg}`);
-                console.error('Media Element Playback Error:', mediaError, e);
-
-                // Display runtime error, avoid duplicating initial setup errors
-                 const existingErrorMsg = playerDiv.querySelector('p[style*="color:"]'); // Find any existing error message
-                 if(!existingErrorMsg) {
-                     playerDiv.innerHTML += `<p style="color:red;">Playback error occurred for ${file.name}. Code: ${errorCode}</p>`;
-                 } else if (!existingErrorMsg.textContent.includes('Playback error')) {
-                     // Optionally add a specific playback error message if a different error was already shown
-                      playerDiv.innerHTML += `<p style="color:red;">Playback error occurred (Code: ${errorCode}).</p>`;
+             // Add extra error handler to the media element itself for runtime playback errors
+             elem.addEventListener('error', (e) => {
+                log(`Media element error for ${file.name}: Code ${elem.error?.code}, Message: ${elem.error?.message}`);
+                console.error('Media Element Playback Error:', elem.error, e);
+                 const errorP = playerDiv.querySelector('p[style*="color:red"], p[style*="color:yellow"]');
+                 if(!errorP) { // Avoid duplicate messages if appendTo already reported one
+                      playerDiv.innerHTML += `<p style="color:red;">Playback error occurred for ${file.name}.</p>`;
                  }
-            });
-        } else {
-            // This case should ideally not happen if err was null, but good to log
-            log(`Warning: appendTo callback finished without error, but 'elem' was not provided.`);
+             });
         }
-    }); // End of appendTo call
+    });
 }
 
 
