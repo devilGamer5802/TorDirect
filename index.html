@@ -5,37 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TorDirect</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Simple WebTorrent Client</h1>
-    <p>Paste a magnet link or select a .torrent file to download/stream.</p>
+    <header>
+        <h1>Torrent Web Client</h1>
+        <!-- Maybe add a logo or subtitle here later -->
+    </header>
 
-    <div class="input-area">
-        <input type="text" id="torrentIdInput" placeholder="Magnet link or info hash">
-        <label class="file-label">
-            Or Choose .torrent file
-            <input type="file" id="torrentFileInput" accept=".torrent">
-        </label>
-        <button id="startButton">Start Download / Stream</button>
-    </div>
+    <section class="hero">
+        <h2>Peer-to-Peer File Sharing</h2>
+        <p class="subtitle">Download & Stream Torrents Directly in Your Browser</p>
+        <div class="input-area">
+            <input type="text" id="torrentIdInput" placeholder="Paste Magnet Link or Info Hash...">
+            <label class="file-label">
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-up" viewBox="0 0 16 16"> <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707V11.5z"/> <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/> </svg> Or Choose File</span>
+                <input type="file" id="torrentFileInput" accept=".torrent">
+            </label>
+            <button id="startButton">Start Transfer</button>
+        </div>
+         <p class="disclaimer"><strong>Disclaimer:</strong> Only use this tool for content you have the legal right to share and download. Downloading copyrighted material without permission may be illegal.</p>
+    </section>
 
-    <div id="status">
-        <h2>Status</h2>
-        <div id="logs">Ready.</div>
-        <div id="progress"></div>
-        <div id="peers">Peers: 0</div>
-    </div>
+    <main class="content-area">
+        <div id="status" class="content-box">
+            <h2>Status</h2>
+            <div id="logs">Ready.</div>
+            <div id="progress"></div>
+            <div id="peers">Peers: 0</div>
+        </div>
 
-    <div id="files">
-        <h2>Files</h2>
-        <ul id="fileList"></ul>
-    </div>
+        <div id="files" class="content-box">
+            <h2>Files</h2>
+            <ul id="fileList"></ul>
+        </div>
 
-    <div id="player">
-        <h2>Streaming Player</h2>
-    </div>
+        <div id="player" class="content-box">
+            <h2>Streaming Player</h2>
+            <!-- Video/Audio tags will be appended here -->
+        </div>
+    </main>
 
+    <footer>
+        <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a></p>
+    </footer>
+
+    <!-- Include WebTorrent library from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <!-- Include your custom script -->
     <script src="script.js"></script>
 </body>
 </html>
