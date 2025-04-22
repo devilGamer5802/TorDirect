@@ -40,7 +40,7 @@ Hosted entirely via GitHub Pages, it showcases a modern, serverless approach to 
   
   <!-- *** Add a Screenshot or GIF Here! *** -->
   <!-- Replace the src with the path to your screenshot/gif in the repo -->
-  <img src="<!-- path/to/your/screenshot.png -->" alt="TorDirect Screenshot" width="700" style="border-radius: 8px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #555;"/>
+  <img src="TorDirect.gif" alt="TorDirect Screenshot" width="700" style="border-radius: 8px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #555;"/>
   
 </div>
 
