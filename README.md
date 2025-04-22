@@ -107,7 +107,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check [iss
 
 ## 📄 License
 
-Distributed under the MIT License. See `LICENSE` file for more information. 
+Distributed under the MIT License. See [`LICENSE`](LICENCE) file for more information. 
 
 
 ---
