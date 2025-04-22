@@ -10,9 +10,8 @@ A simple, clean, client-side web application for streaming and downloading torre
 *   Real-time streaming of video and audio files
 *   Download progress, speed, and ETA display
 *   File list with individual stream/download options
-*   Minimal, dark, responsive UI (using Tailwind CSS)
+*   Minimal, dark, responsive UI
 *   No backend required - fully client-side
-*   Ready for deployment on static hosting platforms (Vercel, Netlify, etc.)
 
 **Technologies Used:**
 
