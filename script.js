@@ -3,6 +3,10 @@ if (!WebTorrent.WEBRTC_SUPPORT) {
     log('WebRTC is not supported in this browser. WebTorrent will not work.');
     // You might want to disable the input/button here
 }
+log("--------------------------------------------------");
+log("LEGAL DISCLAIMER: Only use this tool for content you have the legal right to share and download.");
+log("Downloading copyrighted material without permission may be illegal in your jurisdiction.");
+log("--------------------------------------------------");
 
 // Get DOM elements
 const torrentIdInput = document.getElementById('torrentIdInput');
