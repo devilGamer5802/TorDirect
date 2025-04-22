@@ -1,114 +1,357 @@
-body {
-    font-family: sans-serif;
-    line-height: 1.6;
-    margin: 20px;
-    background-color: #f4f4f4;
-    color: #333;
+/* Basic Reset & Font */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-h1, h2 {
-    color: #1a1a1a;
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.6;
+    color: #e0e0e0; /* Light grey text */
+    background-color: #0a0a0a; /* Very dark fallback */
+    /* Define gradient - adjust angle and colors as needed */
+    background-image: linear-gradient(
+        135deg, /* Angle */
+        #3a1c71, /* Dark Purple/Blue */
+        #d76d77, /* Magenta/Pink */
+        #ffaf7b, /* Orange */
+        #a8e063, /* Light Green */
+        #56ab2f, /* Green */
+        #2b5876  /* Dark Blue */
+    );
+    background-size: 400% 400%; /* Make gradient larger than viewport */
+    animation: gradientAnimation 25s ease infinite; /* Animate the gradient */
+    background-attachment: fixed; /* Keep gradient fixed during scroll */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Gradient Animation */
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Add a dark overlay for better text readability */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 10, 10, 0.80); /* Dark semi-transparent overlay */
+    z-index: -1; /* Place it behind the content */
+}
+
+/* Ensure content is above the overlay */
+header, .hero, .content-area, footer {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px; /* Limit max width for readability */
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Header */
+header {
+    padding-top: 30px;
+    padding-bottom: 15px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 40px;
+}
+
+header h1 {
+    font-size: 1.8em;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    padding-bottom: 40px;
+}
+
+.hero h2 {
+    font-size: 3.5em; /* Large headline */
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.hero .subtitle {
+    font-size: 1.2em;
+    color: #b0b0b0; /* Slightly dimmer text */
+    margin-bottom: 30px;
 }
 
 .input-area {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: center;
+    align-items: center;
+    gap: 15px; /* Spacing between elements */
     margin-bottom: 20px;
-    padding: 15px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 #torrentIdInput {
-    width: 60%;
-    padding: 10px;
-    margin-right: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
+    flex-grow: 1; /* Take available space */
+    min-width: 250px; /* Minimum width */
+    padding: 12px 18px;
+    background-color: rgba(40, 40, 40, 0.8); /* Dark transparent background */
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
+#torrentIdInput:focus {
+    border-color: #777;
+    background-color: rgba(50, 50, 50, 0.9);
+}
+#torrentIdInput::placeholder {
+    color: #888;
+}
+
+
 .file-label {
-    padding: 10px 15px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 3px;
+    padding: 12px 18px;
+    background-color: rgba(60, 60, 60, 0.8);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
     cursor: pointer;
-    display: inline-block; /* Or inline-flex */
-    margin-right: 10px;
-    vertical-align: middle; /* Align with input/button */
+    display: inline-flex; /* Use inline-flex for alignment */
+    align-items: center; /* Vertically align icon and text */
+    gap: 8px; /* Space between icon and text */
+    font-size: 1em;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap; /* Prevent wrapping */
+}
+.file-label:hover {
+    background-color: rgba(80, 80, 80, 0.9);
+     border-color: #777;
+}
+.file-label svg {
+    display: inline-block; /* Ensure SVG behaves like text */
+    vertical-align: middle; /* Align icon nicely */
 }
 
 .file-label input[type="file"] {
-    display: none; /* Hide the default file input */
+    display: none; /* Hide the actual file input */
 }
 
 #startButton {
-    padding: 10px 15px;
-    background-color: #28a745;
-    color: white;
+    padding: 12px 25px;
+    background-color: #ffffff; /* White button like reference */
+    color: #111111; /* Dark text */
     border: none;
-    border-radius: 3px;
+    border-radius: 6px;
     cursor: pointer;
-    vertical-align: middle; /* Align with input/button */
+    font-size: 1em;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    white-space: nowrap; /* Prevent wrapping */
 }
 
 #startButton:hover {
-    background-color: #218838;
+    background-color: #f0f0f0; /* Slightly grey on hover */
+}
+#startButton:active {
+     transform: scale(0.98); /* Click effect */
 }
 
-#status, #files, #player {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.disclaimer {
+    font-size: 0.85em;
+    color: #aaa;
+    margin-top: 25px;
+    padding: 0 10%; /* Indent disclaimer slightly */
+}
+.disclaimer strong {
+    color: #ccc;
+}
+
+
+/* Content Area Below Hero */
+.content-area {
+    padding-top: 20px;
+    padding-bottom: 40px;
+    flex-grow: 1; /* Make main area take remaining vertical space */
+}
+
+.content-box {
+    background-color: rgba(25, 25, 25, 0.85); /* Darker, slightly transparent boxes */
+    padding: 20px 25px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.content-box h2 {
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
 }
 
 #logs {
-    font-family: monospace;
-    background-color: #e9ecef;
-    padding: 10px;
-    border-radius: 3px;
-    max-height: 150px;
+    font-family: 'Courier New', Courier, monospace;
+    background-color: rgba(10, 10, 10, 0.7);
+    padding: 15px;
+    border-radius: 5px;
+    max-height: 200px;
     overflow-y: auto;
-    margin-bottom: 10px;
-    white-space: pre-wrap; /* Wrap long lines */
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #b0b0b0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: pre-wrap;
+    word-break: break-all; /* Break long magnet links etc */
+}
+
+#progress, #peers {
+    font-size: 0.95em;
+    color: #c0c0c0;
+    margin-bottom: 8px;
+}
+
+#fileList {
+    list-style: none;
+    padding: 0;
 }
 
 #fileList li {
-    margin-bottom: 10px;
-    padding: 5px;
-    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping if needed */
+    gap: 10px;
 }
 
 #fileList li:last-child {
     border-bottom: none;
 }
 
+#fileList span { /* File name and size */
+    flex-grow: 1;
+    padding-right: 15px; /* Space before buttons */
+     word-break: break-all; /* Break long filenames */
+}
+
 #fileList button, #fileList a {
-    margin-left: 10px;
-    padding: 3px 8px;
+    margin-left: 5px;
+    padding: 5px 12px;
     cursor: pointer;
-    font-size: 0.9em;
+    font-size: 0.85em;
     text-decoration: none;
-    border: 1px solid #ccc;
-    background-color: #eee;
-    color: #333;
-    border-radius: 3px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background-color: rgba(60, 60, 60, 0.8);
+    color: #e0e0e0;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    white-space: nowrap;
 }
+/* Style download link differently */
 #fileList a {
-     background-color: #007bff;
-     color: white;
-     border-color: #007bff;
+     background-color: rgba(0, 123, 255, 0.7); /* Blueish download */
+     border-color: rgba(0, 123, 255, 0.9);
+     color: #ffffff;
+}
+#fileList a:hover {
+     background-color: rgba(0, 123, 255, 0.9);
 }
 
-
-#fileList button:hover, #fileList a:hover {
-     opacity: 0.8;
+#fileList button:hover {
+     background-color: rgba(80, 80, 80, 0.9);
+     border-color: rgba(255, 255, 255, 0.5);
 }
-
 
 #player video, #player audio {
     max-width: 100%;
     margin-top: 10px;
+    border-radius: 5px;
+    background-color: #000; /* Ensure background is black if controls take time */
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: auto; /* Push footer to bottom */
+    font-size: 0.9em;
+    color: #aaa;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+footer a {
+    color: #ccc;
+    text-decoration: none;
+}
+
+footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hero h2 {
+        font-size: 2.8em;
+    }
+    .hero .subtitle {
+        font-size: 1.1em;
+    }
+    .input-area {
+        flex-direction: column;
+        align-items: stretch; /* Make inputs/buttons full width */
+    }
+    #torrentIdInput {
+         min-width: auto; /* Remove min-width */
+    }
+    #fileList li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+     #fileList span {
+        margin-bottom: 10px; /* Space between name and buttons */
+         padding-right: 0;
+    }
+     #fileList button, #fileList a {
+        margin-left: 0; /* Remove left margin */
+        margin-right: 5px; /* Add right margin */
+    }
+}
+
+@media (max-width: 480px) {
+     header h1 {
+        font-size: 1.5em;
+    }
+    .hero h2 {
+        font-size: 2.2em;
+    }
+     .hero .subtitle {
+        font-size: 1em;
+    }
+     .content-box {
+        padding: 15px 20px;
+    }
+     #fileList li {
+        padding: 10px 0;
+    }
 }
