@@ -373,25 +373,36 @@ function initializeAndAddTorrent(torrentId) {
 
 // --- Event Listeners ---
 startButton.addEventListener('click', () => {
-    const torrentId = torrentIdInput.value.trim();
+    let torrentId = torrentIdInput.value.trim(); // Use let instead of const
     const file = torrentFileInput.files[0];
 
     if (file) {
-        // log(`Selected file: ${file.name}`); // Logged in startTorrent now
         startTorrent(file);
         torrentIdInput.value = '';
-        // Important: Clear the file input so the 'change' event fires if the same file is selected again
         torrentFileInput.value = '';
     } else if (torrentId) {
-        // Basic validation for magnet links (very simple)
         if (!torrentId.startsWith('magnet:?xt=urn:btih:') && !/^[a-fA-F0-9]{40}$/.test(torrentId)) {
              log('Invalid Magnet URI or InfoHash format.');
-             // Maybe show an error message near the input
              return;
         }
-        // log(`Using magnet/hash: ${torrentId.substring(0, 30)}...`); // Logged in startTorrent now
+
+        // *** NEW: Remove &ws= parameter if present ***
+        const wsParamIndex = torrentId.indexOf('&ws=');
+        if (wsParamIndex !== -1) {
+            let nextParamIndex = torrentId.indexOf('&', wsParamIndex + 1);
+            if (nextParamIndex !== -1) {
+                // Remove '&ws=...' up to the next '&'
+                torrentId = torrentId.substring(0, wsParamIndex) + torrentId.substring(nextParamIndex);
+            } else {
+                // Remove '&ws=...' from the end
+                torrentId = torrentId.substring(0, wsParamIndex);
+            }
+            log("Removed web seed (ws=) parameter from magnet link to force P2P.");
+        }
+        // *** END NEW ***
+
         startTorrent(torrentId);
-        torrentFileInput.value = ''; // Clear file input just in case
+        torrentFileInput.value = '';
     } else {
         log('Please enter a magnet link/infohash or select a .torrent file.');
     }
