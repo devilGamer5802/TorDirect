@@ -19,7 +19,7 @@
     <img src="https://img.shields.io/badge/License-MIT-informational?style=for-the-badge" alt="License">
     </a> 
     <a href="https://github.com/DevilGamer5802/TorDirect/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/DevilGamer5802/TorDirect/YOUR_WORKFLOW_FILE.yml?style=for-the-badge" alt="Build Status">
+    <img src="https://img.shields.io/github/actions/workflow/status/.github/workflows/static.yml?style=for-the-badge" alt="Build Status">
     </a>
   </p>
   <a href="https://devilgamer5802.github.io/TorDirect/" target="_blank">
