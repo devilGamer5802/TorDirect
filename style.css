@@ -58,15 +58,11 @@ header, .hero, .content-area, footer {
 
 
 header {
-    padding-top: 20px;
+    padding-top: 30px;
     padding-bottom: 15px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 40px;
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    gap: 15px;
 }
 
 .logo-image {
@@ -78,7 +74,6 @@ header h1 {
     font-size: 1.8em;
     font-weight: 600;
     color: #ffffff;
-    margin: 0;
 }
 
 .hero {
