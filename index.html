@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TorDirect</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Simple WebTorrent Client</h1>
+    <p>Paste a magnet link or select a .torrent file to download/stream.</p>
+
+    <div class="input-area">
+        <input type="text" id="torrentIdInput" placeholder="Magnet link or info hash">
+        <label class="file-label">
+            Or Choose .torrent file
+            <input type="file" id="torrentFileInput" accept=".torrent">
+        </label>
+        <button id="startButton">Start Download / Stream</button>
+    </div>
+
+    <div id="status">
+        <h2>Status</h2>
+        <div id="logs">Ready.</div>
+        <div id="progress"></div>
+        <div id="peers">Peers: 0</div>
+    </div>
+
+    <div id="files">
+        <h2>Files</h2>
+        <ul id="fileList"></ul>
+    </div>
+
+    <div id="player">
+        <h2>Streaming Player</h2>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
