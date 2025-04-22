@@ -158,82 +158,41 @@ function displayFiles(torrent) {
 
 // --- Stream File (Enhanced Logging and Error Handling) ---
 function streamFile(file, isVideo) {
-    log(`Attempting to stream: ${file.name} (IsVideo: ${isVideo})`);
-    playerDiv.innerHTML = '<h2>Streaming Player</h2>'; // Clear previous player
+    log(`Attempting to stream (Simplified): ${file.name}`);
+    playerDiv.innerHTML = '<h2>Streaming Player</h2>';
 
-    // Create media element
     const mediaElement = document.createElement(isVideo ? 'video' : 'audio');
     mediaElement.controls = true;
-    mediaElement.autoplay = true; // Autoplay might be blocked by browser policy, user might need to click play
-    log(`Created ${isVideo ? 'video' : 'audio'} element.`);
+    mediaElement.autoplay = true; // Keep autoplay
 
-    // --- Add event listeners DIRECTLY to the media element for debugging ---
+    // Add only the basic error listener for now
     mediaElement.addEventListener('error', (e) => {
         const error = e.target.error;
-        let errorMessage = 'Unknown error';
-        if (error) {
-            switch (error.code) {
-                case MediaError.MEDIA_ERR_ABORTED:
-                    errorMessage = 'Playback aborted by user or script.';
-                    break;
-                case MediaError.MEDIA_ERR_NETWORK:
-                    errorMessage = 'Network error caused playback failure.';
-                    break;
-                case MediaError.MEDIA_ERR_DECODE:
-                    errorMessage = 'Decoding error: The media file might be corrupted or the browser does not support the codec.';
-                    break;
-                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                    errorMessage = 'Source format not supported (codec issue likely).';
-                    break;
-                default:
-                    errorMessage = `An unknown error occurred (Code: ${error.code})`;
-            }
-        }
-         log(`*** Media Element Error for ${file.name}: ${errorMessage}`);
-         console.error('Media Element Error Event:', e);
-          playerDiv.innerHTML += `<p style="color: red;">Error playing ${file.name}: ${errorMessage}</p>`; // Show error in UI
+        let errorMessage = 'Unknown media error';
+         if (error) {
+             errorMessage = `MediaError code ${error.code}`; // Basic code
+         }
+        log(`*** Media Element Error (Simplified) for ${file.name}: ${errorMessage}`);
+        console.error('Media Element Error Event:', e);
     });
 
-     mediaElement.addEventListener('loadedmetadata', () => log(`Metadata loaded for ${file.name}. Duration: ${mediaElement.duration}`));
-     mediaElement.addEventListener('canplay', () => log(`${file.name} reports it can play.`));
-     mediaElement.addEventListener('waiting', () => log(`${file.name} is waiting for more data...`));
-     mediaElement.addEventListener('stalled', () => log(`${file.name} stalled (network?).`));
-     mediaElement.addEventListener('playing', () => log(`Playback started for ${file.name}.`));
-     mediaElement.addEventListener('progress', () => {
-         // Optional: Log buffering progress
-         try {
-            const buffered = mediaElement.buffered;
-            if (buffered.length > 0) {
-                const bufferedEnd = buffered.end(buffered.length - 1);
-                // console.log(`Buffer progress: ${bufferedEnd.toFixed(2)}s`); // Can be noisy
-            }
-         } catch(e) { /* ignore potential errors reading buffer */ }
-     });
-
-    // Append the element *before* calling renderTo, crucial!
     playerDiv.appendChild(mediaElement);
-    log(`Appended ${isVideo ? 'video' : 'audio'} element to the player div.`);
+    log(`Appended ${isVideo ? 'video' : 'audio'} element.`);
 
-    // Call renderTo
     log(`Calling file.renderTo for ${file.name}...`);
     file.renderTo(mediaElement, (err, elem) => {
-        // This callback fires when renderTo *starts* or errors immediately
         if (err) {
             log(`*** Error initiating renderTo for ${file.name}: ${err.message}`);
             console.error("renderTo Initiation Error:", err);
              playerDiv.innerHTML += `<p style="color: red;">Failed to start streaming ${file.name}: ${err.message}</p>`;
-            // Attempt to remove the failed media element
-            try {
-                playerDiv.removeChild(mediaElement);
-            } catch (removeErr) {/* ignore */}
+            try { playerDiv.removeChild(mediaElement); } catch (removeErr) {/* ignore */}
             return;
         }
-        // 'elem' here is the same as 'mediaElement' we passed in
-        log(`file.renderTo successfully initiated for ${file.name}. Waiting for browser playback events.`);
-        // Playback and buffering are now handled by the browser and the element's event listeners above.
+        log(`file.renderTo successfully initiated for ${file.name}. Waiting for browser playback.`);
     });
 }
 
+    
 
 // --- Start Download/Stream ---
 function startTorrent(torrentId) {
