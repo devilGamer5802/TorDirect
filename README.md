@@ -31,3 +31,4 @@ A simple, clean, client-side web application for streaming and downloading torre
     cd webtorrent-client
     ```
 2. **Enjoy**
+   https://devilgamer5802.github.io/TorDirect/
