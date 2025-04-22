@@ -1,0 +1,114 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1, h2 {
+    color: #1a1a1a;
+}
+
+.input-area {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#torrentIdInput {
+    width: 60%;
+    padding: 10px;
+    margin-right: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.file-label {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-block; /* Or inline-flex */
+    margin-right: 10px;
+    vertical-align: middle; /* Align with input/button */
+}
+
+.file-label input[type="file"] {
+    display: none; /* Hide the default file input */
+}
+
+#startButton {
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    vertical-align: middle; /* Align with input/button */
+}
+
+#startButton:hover {
+    background-color: #218838;
+}
+
+#status, #files, #player {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#logs {
+    font-family: monospace;
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 3px;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    white-space: pre-wrap; /* Wrap long lines */
+}
+
+#fileList li {
+    margin-bottom: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+#fileList li:last-child {
+    border-bottom: none;
+}
+
+#fileList button, #fileList a {
+    margin-left: 10px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    background-color: #eee;
+    color: #333;
+    border-radius: 3px;
+}
+#fileList a {
+     background-color: #007bff;
+     color: white;
+     border-color: #007bff;
+}
+
+
+#fileList button:hover, #fileList a:hover {
+     opacity: 0.8;
+}
+
+
+#player video, #player audio {
+    max-width: 100%;
+    margin-top: 10px;
+}
