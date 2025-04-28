@@ -1,16 +1,14 @@
 // --- Constants & Configuration ---
-
 // List of reliable public STUN servers (essential for WebRTC NAT traversal)
 const RTC_CONFIG = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+        // *** FIX HERE: Removed ?transport=udp ***
+        { urls: 'stun:global.stun.twilio.com:3478' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun.services.mozilla.com' },
         // Add more STUN servers if needed.
-        // For maximum reliability, especially behind difficult NATs/firewalls,
-        // consider adding TURN servers here (usually requires hosting or a paid service).
         // {
         //   urls: 'turn:your-turn-server.com:3478',
         //   username: 'your_username',
@@ -21,13 +19,18 @@ const RTC_CONFIG = {
 
 // List of reliable public WebSocket (WSS) trackers
 // These help connect browser peers that WebTorrent can talk to.
+// List of reliable public WebSocket (WSS) trackers
+// These help connect browser peers that WebTorrent can talk to.
 const DEFAULT_TRACKERS = [
-    'wss://tracker.openwebtorrent.com',
-    'wss://tracker.btorrent.xyz',
-    'wss://tracker.webtorrent.io', // Often included by default, but good to have explicitly
-    'wss://tracker.files.fm:7073/announce',
-    'wss://spacetracker.org:443/announce'
-    // Add more WSS trackers if you find reliable ones.
+    'wss://tracker.openwebtorrent.com', // Didn't show error in logs
+    'wss://tracker.btorrent.xyz',     // Didn't show error in logs
+    // Keep webtorrent.io as it's standard, might have been temporary
+    'wss://tracker.webtorrent.io',
+    // Add a few more public alternatives
+    'wss://tracker.webtorrent.dev',
+    'wss://tracker.files.fm:7073/announce', // Keep this one too, might be back online
+    'wss://spacetracker.org:443/announce', // Keep this one too
+    'wss://tracker.peerweb.site:443/announce'
     // Note: UDP/HTTP trackers won't work directly in the browser.
 ];
 
