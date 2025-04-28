@@ -1,32 +1,13 @@
-// --- Constants & Configuration ---
-
-const RTC_CONFIG = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' },
-    ]
-};
-
-// Default fallback WSS trackers (only WSS works well in browsers)
-const DEFAULT_TRACKERS = [
-    'wss://tracker.openwebtorrent.com',
-    'wss://tracker.btorrent.xyz',
-    'wss://tracker.webtorrent.io',
-    'wss://tracker.webtorrent.dev',
-    'wss://tracker.peerweb.site:443/announce',
-];
-
 // --- Initial Checks & Global Setup ---
 if (typeof WebTorrent === 'undefined') {
     console.error("WebTorrent library not loaded!");
     alert("Error: WebTorrent library failed to load. The application cannot start.");
+    // You might want to disable UI elements here as well
 } else if (!WebTorrent.WEBRTC_SUPPORT) {
     log('Warning: WebRTC is not supported in this browser. Peer-to-peer functionality will be severely limited or non-functional.');
 }
 
+// Get references to essential DOM elements
 const torrentIdInput = document.getElementById('torrentIdInput');
 const torrentFileInput = document.getElementById('torrentFileInput');
 const startButton = document.getElementById('startButton');
@@ -36,59 +17,53 @@ const peersDiv = document.getElementById('peers');
 const fileListUl = document.getElementById('fileList');
 const playerDiv = document.getElementById('player');
 
-let client = null;
-let currentTorrentInfoHash = null;
-let loadedTrackersFromFile = []; // <--- Variable to store trackers from file
+let client = null; // Holds the WebTorrent client instance
+let fetchedTrackers = []; // Holds trackers fetched from external sources
 
 // --- Logging Utility ---
 function log(message) {
-    console.log(message);
+    console.log(message); // Also log to browser console for debugging
     if (logsDiv) {
         const time = new Date().toLocaleTimeString();
-        const sanitizedMessage = String(message).replace(/</g, "<").replace(/>/g, ">");
-        const maxLogLines = 100;
-        const lines = logsDiv.innerHTML.split('<br>').slice(0, maxLogLines - 1);
-        logsDiv.innerHTML = `[${time}] ${sanitizedMessage}<br>${lines.join('<br>')}`;
-    } else if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        console.error("Log element (#logs) not found!");
+        // Basic sanitization (consider a more robust library if handling complex user input)
+        const sanitizedMessage = message.toString().replace(/</g, "<").replace(/>/g, ">");
+        logsDiv.innerHTML = `[${time}] ${sanitizedMessage}<br>` + logsDiv.innerHTML; // Prepend new logs
+    } else {
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+             console.error("Log element (#logs) not found!");
+        }
     }
 }
 
 // --- Utility Functions ---
+
+// Updates the progress display area
 function updateProgress(torrent) {
-    if (!progressDiv || !peersDiv || !torrent) return;
+    if (!progressDiv || !peersDiv) return; // Ensure elements exist
 
     const percent = (torrent.progress * 100).toFixed(2);
     const downloaded = formatBytes(torrent.downloaded);
     const total = formatBytes(torrent.length);
     const dlSpeed = formatBytes(torrent.downloadSpeed) + '/s';
     const ulSpeed = formatBytes(torrent.uploadSpeed) + '/s';
-    let remaining = 'Calculating...';
-
-    const isValidForRemainingCalc = torrent.progress < 1 &&
-                                  torrent.downloadSpeed > 0 &&
-                                  typeof torrent.length === 'number' &&
-                                  torrent.length > 0 &&
-                                  typeof torrent.downloaded === 'number';
-
+    let remaining = 'N/A';
     if (torrent.done) {
         remaining = 'Done';
-    } else if (isValidForRemainingCalc) {
-        const remainingBytes = torrent.length - torrent.downloaded;
-        if (remainingBytes > 0) {
-             const secondsRemaining = remainingBytes / torrent.downloadSpeed;
-             remaining = formatTime(secondsRemaining);
-        } else {
-             remaining = 'Nearly done...';
-        }
-    } else if (torrent.progress > 0 && torrent.downloadSpeed === 0) {
-        remaining = 'Stalled';
-    } else if (torrent.progress === 0 && !torrent.downloadSpeed) {
-        remaining = 'Connecting...';
+    } else if (torrent.timeRemaining && torrent.timeRemaining !== Infinity) {
+        remaining = formatTime(torrent.timeRemaining / 1000); // timeRemaining is in ms
+    } else if (torrent.downloadSpeed > 0 && torrent.length && torrent.length > torrent.downloaded) {
+         // Fallback calculation if timeRemaining isn't available
+         const remainingBytes = torrent.length - torrent.downloaded;
+         const secondsRemaining = remainingBytes / torrent.downloadSpeed;
+         remaining = formatTime(secondsRemaining);
     }
 
+    // Ensure name is displayed safely
+    const torrentName = torrent.name ? torrent.name.replace(/</g, "<").replace(/>/g, ">") : "Fetching name...";
+
     progressDiv.innerHTML = `
-        Progress: <strong>${percent}%</strong> <br>
+        Torrent: ${torrentName}<br>
+        Progress: ${percent}% <br>
         Downloaded: ${downloaded} / ${total} <br>
         Speed: ↓ ${dlSpeed} / ↑ ${ulSpeed} <br>
         Time Remaining: ${remaining}
@@ -96,124 +71,205 @@ function updateProgress(torrent) {
     peersDiv.innerText = `Peers: ${torrent.numPeers}`;
 }
 
+// Formats byte values into human-readable strings (KB, MB, GB etc.)
 function formatBytes(bytes, decimals = 2) {
-    if (typeof bytes !== 'number' || isNaN(bytes) || bytes < 0) return 'N/A';
+    if (bytes === null || typeof bytes === 'undefined' || isNaN(bytes) || bytes < 0) return '0 Bytes'; // More robust check
     if (bytes === 0) return '0 Bytes';
-
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-    const i = Math.max(0, Math.floor(Math.log(bytes) / Math.log(k)));
-    const validIndex = Math.min(i, sizes.length - 1);
-
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const validIndex = Math.min(Math.max(0, i), sizes.length - 1); // Ensure index is valid
     return parseFloat((bytes / Math.pow(k, validIndex)).toFixed(dm)) + ' ' + sizes[validIndex];
 }
 
-function formatTime(seconds) {
-    if (typeof seconds !== 'number' || !isFinite(seconds) || seconds < 0) return 'N/A';
 
+// Formats seconds into HH:MM:SS string
+function formatTime(seconds) {
+     if (!seconds || seconds === Infinity || isNaN(seconds) || seconds < 0) return 'N/A';
     try {
         const totalSeconds = Math.round(seconds);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const secs = totalSeconds % 60;
 
-        const hoursStr = String(hours).padStart(2, '0');
-        const minutesStr = String(minutes).padStart(2, '0');
-        const secsStr = String(secs).padStart(2, '0');
+        const hh = String(hours).padStart(2, '0');
+        const mm = String(minutes).padStart(2, '0');
+        const ss = String(secs).padStart(2, '0');
 
-        return `${hoursStr}:${minutesStr}:${secsStr}`;
+        if (hours > 0) {
+            return `${hh}:${mm}:${ss}`;
+        } else {
+            return `${mm}:${ss}`;
+        }
     } catch (e) {
-        console.error("Error formatting time:", e);
-        return 'N/A';
+         console.error("Error formatting time:", e);
+         return 'N/A';
     }
 }
 
+// --- Tracker Fetching ---
+
+// Fetches trackers from local file and remote API
+async function fetchTrackers() {
+    log('Fetching external trackers...');
+    let trackers = new Set(); // Use a Set to automatically handle duplicates
+
+    // 1. Fetch from local tracker.txt
+    try {
+        const response = await fetch('tracker.txt');
+        if (response.ok) {
+            const text = await response.text();
+            const lines = text.split('\n');
+            lines.forEach(line => {
+                const tracker = line.trim();
+                // Add if not empty and not a comment
+                if (tracker && !tracker.startsWith('#')) {
+                    trackers.add(tracker);
+                }
+            });
+            log(`Loaded ${trackers.size} trackers from tracker.txt`);
+        } else {
+            log('Warning: tracker.txt not found or could not be fetched (status: ${response.status}).');
+        }
+    } catch (error) {
+        log(`Warning: Error fetching tracker.txt: ${error.message}`);
+    }
+
+    // 2. Fetch from remote API (e.g., newtrackon) - Use CORS proxy if needed
+    const initialSize = trackers.size;
+    const trackerApiUrl = 'https://corsproxy.io/?' + encodeURIComponent('https://newtrackon.com/api/stable'); // Basic CORS proxy
+    // Alternative raw source: 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best_ip.txt'
+    //                  or: 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_all_ws.txt' (for websockets)
+
+    try {
+        const response = await fetch(trackerApiUrl); // Adjust timeout if needed
+        if (response.ok) {
+            const text = await response.text();
+            const lines = text.split('\n').filter(Boolean); // Filter out empty lines
+             lines.forEach(line => {
+                const tracker = line.trim();
+                 if (tracker && !tracker.startsWith('#')) { // Double check format if needed
+                     trackers.add(tracker);
+                 }
+            });
+            log(`Added ${trackers.size - initialSize} trackers from API (${trackerApiUrl}). Total unique: ${trackers.size}`);
+        } else {
+            log(`Warning: Failed to fetch trackers from API (${trackerApiUrl}), status: ${response.status}`);
+        }
+    } catch (error) {
+        log(`Warning: Error fetching trackers from API (${trackerApiUrl}): ${error.message}`);
+    }
+
+    if (trackers.size === 0) {
+         log("Warning: No external trackers loaded. Relying on torrent embedded trackers and DHT/PEX.");
+         return []; // Return empty array, WebTorrent will use defaults
+    } else {
+         log(`Total unique external trackers fetched: ${trackers.size}`);
+         return Array.from(trackers); // Convert Set back to Array
+    }
+}
+
+
 // --- Core Torrent Handling ---
 
+// Renders the list of files in the torrent
 function displayFiles(torrent) {
-    if (!fileListUl || !playerDiv) return;
-    fileListUl.innerHTML = '';
-    playerDiv.innerHTML = '<h2>Streaming Player</h2>';
+    if (!fileListUl || !playerDiv) {
+        log("Error: UI elements for file list or player missing.");
+        return;
+    }
+    fileListUl.innerHTML = ''; // Clear previous list
+    playerDiv.innerHTML = '<h2>Streaming Player</h2>'; // Reset player area
 
-    if (!torrent || !torrent.files || torrent.files.length === 0) {
-        log("Waiting for file information or torrent is empty.");
+    if (!torrent.files || torrent.files.length === 0) {
+        log("Waiting for file information in the torrent metadata...");
         const li = document.createElement('li');
-        li.textContent = "Scanning for files...";
+        li.textContent = "Waiting for file information...";
         fileListUl.appendChild(li);
         return;
     }
 
     log(`Displaying ${torrent.files.length} file(s) for torrent: ${torrent.name || torrent.infoHash}`);
 
-    torrent.files.forEach((file, index) => {
+    torrent.files.forEach((file) => {
         const li = document.createElement('li');
         const fileInfoSpan = document.createElement('span');
-        const fileName = file.name || `File ${index + 1}`;
+        // Sanitize file name before display
+        const safeFileName = file.name ? file.name.replace(/</g, "<").replace(/>/g, ">") : 'Unknown File';
         const fileLength = typeof file.length === 'number' ? formatBytes(file.length) : 'Unknown Size';
-        fileInfoSpan.textContent = `${fileName} (${fileLength})`;
+        fileInfoSpan.textContent = `${safeFileName} (${fileLength})`;
         li.appendChild(fileInfoSpan);
 
         const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex'; // Use flexbox for better alignment
+        buttonContainer.style.gap = '5px';     // Add space between buttons
         buttonContainer.style.marginTop = '5px';
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.gap = '10px';
 
-        if (typeof file.getBlobURL === 'function') {
-            const downloadButton = document.createElement('a');
-            downloadButton.textContent = 'Download';
-            downloadButton.href = '#';
-            downloadButton.download = file.name || `download_${index}`;
-            downloadButton.title = `Download ${fileName}`;
-            downloadButton.className = 'button file-button';
-            downloadButton.onclick = (e) => {
-                e.preventDefault();
-                log(`Preparing download for ${fileName}...`);
-                downloadButton.textContent = 'Generating...';
-                downloadButton.style.opacity = '0.6';
-                downloadButton.style.pointerEvents = 'none';
+        // Download Button (Blob URL)
+        const downloadButton = document.createElement('button');
+        downloadButton.textContent = 'Download';
+        downloadButton.title = `Download ${safeFileName}`;
+        downloadButton.onclick = (e) => {
+             e.preventDefault();
+             log(`Preparing download for ${safeFileName}...`);
+             const button = e.target;
+             button.textContent = 'Generating...';
+             button.disabled = true;
 
-                file.getBlobURL((err, url) => {
-                    downloadButton.textContent = 'Download';
-                    downloadButton.style.opacity = '1';
-                    downloadButton.style.pointerEvents = 'auto';
+             if (typeof file.getBlobURL !== 'function') {
+                  log(`Error: file.getBlobURL is not available for ${safeFileName}.`);
+                  button.textContent = 'Error';
+                  setTimeout(() => { // Reset after a delay
+                      button.textContent = 'Download';
+                      button.disabled = false;
+                  }, 3000);
+                  return;
+             }
 
-                    if (err) {
-                        log(`Error getting blob URL for ${fileName}: ${err.message}`);
-                        console.error("Blob URL Error:", err);
-                        alert(`Failed to generate download link for ${fileName}: ${err.message}`);
-                        return;
-                    }
-                    if (!url) {
-                        log(`Failed to generate blob URL for ${fileName} (maybe cancelled or empty?).`);
-                        alert(`Could not generate download link for ${fileName}.`);
-                        return;
-                    }
-                    log(`Download link generated for ${fileName}. Starting download.`);
-                    const tempLink = document.createElement('a');
-                    tempLink.href = url;
-                    tempLink.download = file.name || `download_${index}`;
-                    document.body.appendChild(tempLink);
-                    tempLink.click();
-                    document.body.removeChild(tempLink);
-                });
-            };
-            buttonContainer.appendChild(downloadButton);
-        } else {
-            log(`Download not available for ${fileName}: getBlobURL method missing.`);
-        }
+             file.getBlobURL((err, url) => {
+                 button.disabled = false; // Re-enable button regardless of outcome
+                 if (err) {
+                     log(`Error getting blob URL for ${safeFileName}: ${err.message}`);
+                     button.textContent = 'Error';
+                      setTimeout(() => { button.textContent = 'Download'; }, 3000);
+                     return;
+                 }
+                 if (!url) {
+                     log(`Failed to generate blob URL for ${safeFileName} (maybe cancelled?).`);
+                     button.textContent = 'Download';
+                     return;
+                 }
+                 log(`Download link generated for ${safeFileName}. Starting download.`);
+                 const tempLink = document.createElement('a');
+                 tempLink.href = url;
+                 tempLink.download = file.name; // Use original name for download attribute
+                 document.body.appendChild(tempLink);
+                 tempLink.click();
+                 document.body.removeChild(tempLink);
+                 // Consider revoking URL if memory becomes an issue: URL.revokeObjectURL(url);
+                 button.textContent = 'Download';
+             });
+        };
+        buttonContainer.appendChild(downloadButton);
 
-        const isStreamable = /\.(mp4|webm|mkv|ogv|ogg|mp3|wav|aac|m4a|flac|opus|oga)$/i.test(fileName);
+        // Stream Button (using file.appendTo)
+        const isStreamable = /\.(mp4|webm|mkv|ogv|ogg|mp3|wav|aac|m4a|flac|opus|oga)$/i.test(file.name);
+        // Check if the method exists AND the file type is likely streamable
         if (isStreamable && typeof file.appendTo === 'function') {
             const streamButton = document.createElement('button');
             streamButton.textContent = 'Stream';
-            streamButton.title = `Stream ${fileName}`;
-            streamButton.className = 'button file-button';
+            streamButton.title = `Stream ${safeFileName}`;
             streamButton.onclick = () => streamFile(file);
             buttonContainer.appendChild(streamButton);
         } else if (isStreamable) {
-            log(`Streaming not possible for ${fileName}: appendTo method missing.`);
+             log(`Streaming not possible for ${safeFileName}: file.appendTo method missing or not supported.`);
+             // Optionally add a disabled stream button here for clarity
+             const disabledStreamButton = document.createElement('button');
+             disabledStreamButton.textContent = 'Stream';
+             disabledStreamButton.disabled = true;
+             disabledStreamButton.title = `Cannot stream: appendTo method unavailable`;
+             buttonContainer.appendChild(disabledStreamButton);
         }
 
         li.appendChild(buttonContainer);
@@ -221,395 +277,395 @@ function displayFiles(torrent) {
     });
 }
 
+// Streams the given file into the player element using file.appendTo
 function streamFile(file) {
     if (!playerDiv) {
         log("Error: Player element not found. Cannot stream.");
         return;
     }
-     if (typeof file.appendTo !== 'function') {
-         log(`Error: Cannot stream ${file.name}. appendTo method not available.`);
-         playerDiv.innerHTML = `<h2>Streaming Player</h2><p style="color:red;">Cannot stream "${file.name}". Feature not supported.</p>`;
-         return;
-     }
+    // Sanitize file name for logging/display
+    const safeFileName = file.name ? file.name.replace(/</g, "<").replace(/>/g, ">") : 'Unknown File';
 
-    log(`Attempting to stream ${file.name} using file.appendTo()...`);
-    playerDiv.innerHTML = `<h2>Streaming Player</h2><p>Loading ${file.name}...</p>`;
+    log(`Attempting to stream ${safeFileName} using file.appendTo()...`);
+    playerDiv.innerHTML = `<h2>Streaming: ${safeFileName}</h2>`; // Clear previous content, show title
 
-    file.appendTo(playerDiv, { autoplay: true, controls: true }, (err, elem) => {
+    // Append the file to the playerDiv. WebTorrent creates the <video> or <audio> element.
+    file.appendTo(playerDiv, { autoplay: true, controls: true }, (err, elem) => { // elem is the <video>/<audio> tag
         if (err) {
-            log(`Error streaming ${file.name}: ${err.message}`);
+            log(`Error streaming ${safeFileName}: ${err.message}`);
             console.error("Streaming Error (appendTo):", err);
-            let userMessage = `Could not stream "${file.name}".`;
+            let errorMsg = `<p style="color:red;">Could not stream "${safeFileName}".`;
             if (err.message.toLowerCase().includes('unsupported') || err.name === 'NotSupportedError') {
-                 userMessage = `Cannot stream "${file.name}". The browser does not support this file format or codec.`;
-            } else if (err.message.toLowerCase().includes('decode')) {
-                 userMessage = `Error decoding "${file.name}". The file might be corrupted or use an unsupported codec.`;
+                 errorMsg += ` The browser may not support this file format or codec.`;
+                 // Suggest Download as an alternative
+                 errorMsg += ` You can try downloading the file instead.</p>`;
+            } else if (err.message.toLowerCase().includes('network') || err.message.toLowerCase().includes('decode')) {
+                 errorMsg += ` A network or decoding error occurred. Check console for details.</p>`;
             } else {
-                 userMessage += ` ${err.message}`;
+                 errorMsg += ` ${err.message}</p>`;
             }
-            playerDiv.innerHTML = `<h2>Streaming Player</h2><p style="color:red;">${userMessage}</p>`;
+             playerDiv.innerHTML += errorMsg; // Append error message
             return;
         }
 
-        log(`Streaming ${file.name} in the player area.`);
+        // Streaming started (or at least the element was created)
+        log(`Streaming element created for ${safeFileName}. Playback should start soon.`);
         if (elem) {
-             const loadingP = playerDiv.querySelector('p');
-             if (loadingP && loadingP.textContent.startsWith('Loading')) {
-                 playerDiv.removeChild(loadingP);
-             }
-
-            elem.style.maxWidth = '100%';
+            elem.style.maxWidth = '100%'; // Ensure video fits container
             elem.style.display = 'block';
             elem.style.marginTop = '10px';
-            elem.style.backgroundColor = '#000';
+            elem.style.backgroundColor = '#000'; // Black background
 
-            elem.addEventListener('error', (e) => {
-                const mediaError = elem.error;
-                let errorText = `Playback error for ${file.name}.`;
-                if (mediaError) {
-                    errorText += ` Code: ${mediaError.code}, Message: ${mediaError.message}`;
-                }
-                log(errorText);
-                console.error('Media Element Playback Error:', mediaError, e);
-
-                const existingErrorP = playerDiv.querySelector('p[style*="color:red"], p[style*="color:yellow"]');
-                if (!existingErrorP) {
-                    const errorP = document.createElement('p');
-                    errorP.style.color = 'red';
-                    errorP.textContent = `Playback failed for ${file.name}. The browser encountered an error.`;
-                    if (elem.parentNode === playerDiv) {
-                         playerDiv.insertBefore(errorP, elem);
-                    } else {
-                         playerDiv.appendChild(errorP);
+             // Additional error handling on the media element itself for runtime issues
+             elem.addEventListener('error', (e) => {
+                 const mediaError = elem.error;
+                 let detail = 'Unknown Error';
+                 if (mediaError) {
+                    switch (mediaError.code) {
+                        case MediaError.MEDIA_ERR_ABORTED: detail = 'Playback aborted by user.'; break;
+                        case MediaError.MEDIA_ERR_NETWORK: detail = 'Network error caused download failure.'; break;
+                        case MediaError.MEDIA_ERR_DECODE: detail = 'Playback aborted due to decoding error (corrupted data or unsupported features).'; break;
+                        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED: detail = 'Media source not supported (unsupported format/codec).'; break;
+                        default: detail = `Code ${mediaError.code}; Message: ${mediaError.message}`;
                     }
-                }
-            });
+                 }
+                 log(`Media Element Error (${safeFileName}): ${detail}`);
+                 console.error('Media Element Playback Error:', mediaError, e);
 
-            elem.addEventListener('playing', () => {
-                 log(`Playback started for ${file.name}`);
-            });
-            elem.addEventListener('waiting', () => {
-                 log(`Buffering ${file.name}...`);
-            });
+                 // Avoid adding duplicate messages if appendTo already showed one
+                 const existingErrorP = playerDiv.querySelector('p[style*="color:red"]');
+                 if(!existingErrorP) {
+                      playerDiv.innerHTML += `<p style="color:red;">Playback error occurred for ${safeFileName}: ${detail}</p>`;
+                 } else {
+                     // Maybe update existing message
+                     if (!existingErrorP.textContent.includes(detail.substring(0, 30))) { // Avoid redundant parts
+                         existingErrorP.innerHTML += `<br>Additional Detail: ${detail}`;
+                     }
+                 }
+             });
+
+             elem.addEventListener('stalled', () => {
+                 log(`Media stalled for ${safeFileName}. Waiting for data...`);
+                 // Optionally add visual feedback in the playerDiv
+             });
+             elem.addEventListener('waiting', () => {
+                 log(`Media waiting for data (buffering) for ${safeFileName}...`);
+             });
+              elem.addEventListener('playing', () => {
+                 log(`Media playback started/resumed for ${safeFileName}.`);
+             });
 
         } else {
-            log(`Streaming setup for ${file.name} completed, but no element was returned.`);
-            playerDiv.innerHTML = `<h2>Streaming Player</h2><p style="color:orange;">Started streaming for ${file.name}, but player element is missing.</p>`;
+            log(`Warning: appendTo completed for ${safeFileName}, but the element was not returned.`);
+             playerDiv.innerHTML += `<p style="color:orange;">Streaming element created, but reference unavailable.</p>`;
         }
     });
+    // IMPORTANT NOTE FOR GITHUB PAGES & OTHERS:
+    // Streaming directly via `appendTo` can sometimes fail due to:
+    // 1. Browser Codec Support: The browser *must* support the video/audio codec inside the container (mp4, mkv, etc.).
+    // 2. Server Configuration: Some hosting (like GitHub Pages) might serve files with incorrect MIME types, confusing the browser.
+    // 3. Network Issues: Slow connections or lack of peers can cause stalling.
+    // If streaming consistently fails, consider more advanced techniques like MediaSource Extensions (MSE),
+    // but this significantly increases complexity. The download button provides a reliable fallback.
 }
 
-function startTorrent(torrentInput) {
-    const inputDesc = typeof torrentInput === 'string' ? `ID: ${torrentInput.substring(0, 50)}...` : `File: ${torrentInput.name}`;
-    log(`Attempting to start torrent: ${inputDesc}`);
+// Main function to handle starting a new torrent download/stream
+async function startTorrent(torrentId) { // Made async to wait for trackers
+    const idString = typeof torrentId === 'string'
+        ? (torrentId.startsWith('magnet:') ? torrentId.substring(0, 60) + '...' : torrentId)
+        : (torrentId.name || 'Unknown File');
+    log(`Starting torrent process for: ${idString}`);
+    startButton.disabled = true; // Disable button while processing
 
-    const destroyPromise = new Promise((resolve, reject) => {
-        if (client) {
-            log('Destroying previous WebTorrent client instance...');
+    // 1. Destroy existing client if any
+    if (client) {
+        log('Destroying previous torrent instance...');
+        await new Promise((resolve, reject) => {
             client.destroy(err => {
                 if (err) {
-                    log(`Warning: Error destroying previous client: ${err.message}`);
-                    console.warn("Client Destroy Error:", err);
+                    log(`Error destroying previous client: ${err.message}`);
+                    // Continue anyway, but log the error
+                    console.error("Client Destroy Error:", err);
                 } else {
                     log('Previous client destroyed successfully.');
                 }
                 client = null;
-                currentTorrentInfoHash = null;
-                resolve();
+                resolve(); // Resolve regardless of error to proceed
             });
-        } else {
-            resolve();
-        }
-    });
+             // Safety timeout in case destroy hangs
+             setTimeout(() => {
+                 log('Destroy timeout reached, proceeding.');
+                 client = null; // Ensure client is nulled
+                 resolve();
+             }, 3000); // 3 second timeout
+        });
+    }
 
-    destroyPromise.then(() => {
-        initializeAndAddTorrent(torrentInput);
-    });
+    // 2. Fetch Trackers (only need to do this once per session ideally, but simple here)
+    // If fetchedTrackers is already populated, you could skip fetching again.
+    // For simplicity here, we fetch each time start is clicked.
+    fetchedTrackers = await fetchTrackers(); // Wait for trackers to be fetched
+
+    // 3. Initialize new client and add torrent
+    initializeAndAddTorrent(torrentId, fetchedTrackers);
+
+    startButton.disabled = false; // Re-enable button
 }
 
-function initializeAndAddTorrent(torrentInput) {
-    log('Initializing new WebTorrent client with WebRTC config...');
+// Initializes the WebTorrent client and adds the specified torrent
+function initializeAndAddTorrent(torrentId, trackers) {
+    log('Initializing new WebTorrent client...');
+    const clientOptions = {
+        tracker: {
+            // announce: trackers // Pass the fetched trackers here
+            // WebTorrent internally merges announce list with torrent file trackers, DHT, PEX etc.
+        }
+    };
 
-    if (progressDiv) progressDiv.innerHTML = 'Initializing Client...';
-    if (peersDiv) peersDiv.innerText = 'Peers: 0';
-    if (fileListUl) fileListUl.innerHTML = '';
-    if (playerDiv) playerDiv.innerHTML = '<h2>Streaming Player</h2>';
+    // Add fetched trackers if available
+    if (trackers && trackers.length > 0) {
+        clientOptions.tracker.announce = trackers;
+        log(`Using ${trackers.length} external trackers.`);
+    } else {
+        log("No external trackers provided, using defaults + torrent embedded.");
+    }
 
     try {
-        client = new WebTorrent({
-            tracker: {
-                rtcConfig: RTC_CONFIG
-            }
-        });
+         client = new WebTorrent(clientOptions);
+    } catch(err) {
+         log(`Fatal Error: Could not initialize WebTorrent Client: ${err.message}`);
+         console.error("WebTorrent Client Instantiation Error:", err);
+         if(progressDiv) progressDiv.innerHTML = '<span style="color:red;">WebTorrent Init Failed!</span>';
+         if(startButton) startButton.disabled = false; // Re-enable if init failed
+         return;
+    }
 
-        log('WebTorrent client initialized.');
+    // Generic error handler for the client instance
+    client.on('error', err => {
+        log(`WebTorrent Client Error: ${err.message}`);
+        console.error("WebTorrent Client Error:", err);
+        if (progressDiv) progressDiv.innerHTML = '<span style="color:red;">Client Error! Check console.</span>';
+        if (peersDiv) peersDiv.innerText = 'Peers: 0';
+        // Consider attempting to destroy the client here?
+    });
 
-        client.on('error', err => {
-            let message = `WebTorrent Client Error: ${err.message}`;
-            if (err.message && err.message.includes('tracker')) {
-                 message += ' (Problem connecting to a tracker server)';
-            } else if (err.message && err.message.includes('WebSocket')) {
-                 message += ' (WebSocket connection issue)';
-            }
-            log(message);
-            console.error("WebTorrent Client Error:", err);
-            if (progressDiv) progressDiv.innerHTML = 'Client Error! See console.';
-            if (peersDiv) peersDiv.innerText = 'Peers: Error';
-        });
+    log('Adding torrent to client...');
+    if (progressDiv) progressDiv.innerHTML = 'Fetching metadata...';
+    if (peersDiv) peersDiv.innerText = 'Peers: 0';
+    if (fileListUl) fileListUl.innerHTML = ''; // Clear file list
+    if (playerDiv) playerDiv.innerHTML = '<h2>Streaming Player</h2>'; // Reset player
 
-        client.on('warning', warn => {
-             log(`WebTorrent Client Warning: ${warn.message}`);
-             console.warn("WebTorrent Client Warning:", warn);
-        });
+    try {
+        // Add the torrent (magnet URI, infohash, .torrent file, or Buffer)
+        client.add(torrentId, {
+            // You could also add trackers specifically for this torrent here
+            // announce: trackers
+        }, torrent => {
+            // --- Metadata Ready Callback ('torrent' event) ---
+            const torrentName = torrent.name || torrent.infoHash;
+            log(`Metadata received for: ${torrentName}`);
+            log('Connecting to peers & preparing transfer...');
+            if (progressDiv) progressDiv.innerHTML = 'Connecting / Downloading...';
 
-        log('Adding torrent to client...');
-        if (progressDiv) progressDiv.innerHTML = 'Adding torrent...';
+            displayFiles(torrent);
+            updateProgress(torrent); // Show initial progress
 
-        // Combine default trackers with successfully loaded ones, removing duplicates
-        // Note: Non-WSS trackers will likely cause warnings but are included per user request.
-        const combinedTrackers = [...new Set([...DEFAULT_TRACKERS, ...loadedTrackersFromFile])];
+            // --- Torrent-Specific Event Listeners ---
+            torrent.on('warning', err => {
+                log(`Torrent Warning (${torrentName}): ${err.message}`);
+                console.warn(`Torrent Warning (${torrentName}):`, err);
+            });
+            torrent.on('error', err => {
+                log(`Torrent Error (${torrentName}): ${err.message}`);
+                console.error(`Torrent Error (${torrentName}):`, err);
+                 if (progressDiv && progressDiv.innerHTML.includes('%')) { // Only update if progress was shown
+                     progressDiv.innerHTML += '<br><span style="color:red;">Torrent Error!</span>';
+                 } else {
+                     progressDiv.innerHTML = '<span style="color:red;">Torrent Error! Check logs.</span>';
+                 }
+                 updateProgress(torrent); // Update stats even on error
+            });
+            torrent.on('metadata', () => { // Useful if metadata loads *after* initial 'torrent' event
+                log(`Metadata event fired for ${torrent.name || torrent.infoHash}. Updating file list.`);
+                 if (!fileListUl.hasChildNodes() || fileListUl.textContent.includes("Waiting")) {
+                    displayFiles(torrent); // Refresh file list if it wasn't populated
+                 }
+                 updateProgress(torrent);
+            });
+             torrent.on('ready', () => { // Torrent is ready to download data (has peers, necessary info)
+                 log(`Torrent Ready (${torrent.name || torrent.infoHash}). Download should begin.`);
+                 if (!fileListUl.hasChildNodes() || fileListUl.textContent.includes("Waiting")) {
+                    displayFiles(torrent); // Refresh file list if it wasn't populated
+                 }
+                 updateProgress(torrent);
+             });
+            torrent.on('download', bytes => updateProgress(torrent)); // Update frequently
+            torrent.on('upload', bytes => updateProgress(torrent)); // Update upload speed too
+            torrent.on('done', () => {
+                log(`Torrent finished downloading: ${torrentName}`);
+                updateProgress(torrent);
+                 if (progressDiv) progressDiv.innerHTML += '<br><strong style="color: lightgreen;">Download Complete!</strong>';
+                // Maybe add a notification or visual cue
+            });
+            torrent.on('wire', (wire, addr) => {
+                 // log(`Connected to peer: ${addr || 'Incoming Connection'}`); // Can be very noisy
+                 updateProgress(torrent); // Update peer count
+            });
+            torrent.on('peer', (peerId) => { // Fired when a peer is discovered
+                // log(`Discovered peer: ${peerId}`); // Also potentially noisy
+                updateProgress(torrent); // Update peer count
+            });
+            torrent.on('noPeers', (announceType) => { // Fired when no peers found for a tracker type
+                log(`Warning: No peers found via ${announceType} for ${torrentName}. Trying other sources...`);
+                // This often indicates tracker issues or a dead torrent
+            });
 
-        log(`Using ${combinedTrackers.length} unique trackers (Default + File). Check console for warnings on non-WSS trackers.`);
-        console.log("Effective Trackers:", combinedTrackers);
-
-        const addOptions = {
-            announce: combinedTrackers
-        };
-
-        const torrent = client.add(torrentInput, addOptions, torrentReadyCallback);
-
-        currentTorrentInfoHash = torrent.infoHash;
-        log(`Torrent added (infohash: ${torrent.infoHash}). Waiting for metadata...`);
-        if (progressDiv) progressDiv.innerHTML = 'Fetching metadata...';
-
-        updateProgress(torrent);
-
-        torrent.on('metadata', () => {
-             log(`Metadata received for: ${torrent.name || torrent.infoHash}`);
-             if (progressDiv) progressDiv.innerHTML = 'Metadata loaded. Connecting...';
-             displayFiles(torrent);
-             updateProgress(torrent);
-        });
-
-        torrent.on('ready', () => {
-             log(`Torrent ready: ${torrent.name || torrent.infoHash}`);
-             if (progressDiv && progressDiv.innerHTML.includes('Metadata loaded')) {
-                 progressDiv.innerHTML = 'Ready to download/stream.';
-             }
-             if (!fileListUl.hasChildNodes() && torrent.files && torrent.files.length > 0) {
+             // Sometimes metadata/files are ready immediately after 'add' but before 'torrent' event fully resolves
+             if (torrent.files && torrent.files.length > 0 && (!fileListUl.hasChildNodes() || fileListUl.textContent.includes("Waiting"))) {
+                 log('Files available immediately after add. Displaying.');
                  displayFiles(torrent);
              }
-             updateProgress(torrent);
+             updateProgress(torrent); // Initial update
         });
 
-        torrent.on('warning', err => {
-            log(`Torrent warning (${torrent.infoHash}): ${err.message}`);
-            console.warn(`Torrent Warning (${torrent.infoHash}):`, err);
-            updateProgress(torrent);
-        });
+        // --- Code runs immediately after client.add() is called (doesn't wait for metadata) ---
+        // Log the infohash early, useful for debugging. client.add returns the torrent instance synchronously.
+        const addedTorrent = client.torrents[client.torrents.length - 1];
+        if(addedTorrent) {
+            log(`Torrent added to client (infohash: ${addedTorrent.infoHash}). Waiting for metadata...`);
+            updateProgress(addedTorrent); // Show initial state (peers 0, progress 0)
+        } else {
+            log("Torrent potentially added, but couldn't get immediate reference.");
+        }
 
-        torrent.on('error', err => {
-            log(`Torrent error (${torrent.infoHash}): ${err.message}`);
-            console.error(`Torrent Error (${torrent.infoHash}):`, err);
-            if (progressDiv) progressDiv.innerHTML = 'Torrent Error! See console.';
-            updateProgress(torrent);
-        });
-
-        torrent.on('download', bytes => {
-            updateProgress(torrent);
-        });
-
-        torrent.on('upload', bytes => {
-            updateProgress(torrent);
-        });
-
-        torrent.on('done', () => {
-            log(`Torrent finished downloading: ${torrent.name || torrent.infoHash}`);
-            updateProgress(torrent);
-            if (progressDiv) {
-                const currentHTML = progressDiv.innerHTML;
-                if (!currentHTML.includes('Complete!')) {
-                     progressDiv.innerHTML = currentHTML + '<br><strong>Download Complete!</strong>';
-                }
-            }
-        });
-
-        torrent.on('wire', (wire, addr) => {
-            log(`Connected to peer: ${addr || 'Incoming Connection'}`);
-            updateProgress(torrent);
-        });
-
-        torrent.on('noPeers', (announceType) => {
-             log(`No peers found via ${announceType} for torrent ${torrent.infoHash}. Waiting...`);
-             if (peersDiv) peersDiv.innerText = `Peers: 0 (Searching via ${announceType}...)`;
-        });
-
-    } catch (err) {
-        log(`Fatal Error adding torrent: ${err.message}. Check input or client setup.`);
-        console.error("Client Add/Init Error:", err);
-        if (progressDiv) progressDiv.innerHTML = 'Error: Invalid Torrent ID/File or Client Init Failed.';
+    } catch (err) { // Catch synchronous errors during the client.add call itself
+        log(`Error adding torrent: ${err.message}. Check magnet URI / file format.`);
+        console.error("Client.add Error:", err);
+        if (progressDiv) progressDiv.innerHTML = '<span style="color:red;">Invalid Torrent ID/File</span>';
+        if (startButton) startButton.disabled = false; // Re-enable button on failure
+        // Clean up client if add failed immediately
         if (client) {
-            client.destroy();
+            client.destroy(destroyErr => {
+                 if (destroyErr) console.error("Error destroying client after add failure:", destroyErr);
+            });
             client = null;
         }
     }
 }
 
-function torrentReadyCallback(torrent) {
-    log(`Torrent ready callback fired: ${torrent.name || torrent.infoHash}`);
-    if (currentTorrentInfoHash !== torrent.infoHash) {
-         log(`Warning: Torrent ready callback for unexpected infohash ${torrent.infoHash}. Current is ${currentTorrentInfoHash}`);
-         return;
-    }
-
-    log('Initial connection/download phase starting...');
-    if (progressDiv && !progressDiv.innerHTML.includes('Connecting')) {
-         progressDiv.innerHTML = 'Connecting / Downloading...';
-    }
-    displayFiles(torrent);
-    updateProgress(torrent);
-}
 
 // --- Initialization and Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
-    const requiredElementIds = ['torrentIdInput', 'torrentFileInput', 'startButton', 'logs', 'progress', 'peers', 'fileList', 'player'];
+    // Check essential elements exist
+    const essentialIds = ['torrentIdInput', 'torrentFileInput', 'startButton', 'logs', 'progress', 'peers', 'fileList', 'player'];
     let allElementsFound = true;
-    requiredElementIds.forEach(id => {
+    essentialIds.forEach(id => {
         if (!document.getElementById(id)) {
-            console.error(`CRITICAL: Essential HTML element with ID '${id}' was not found AFTER DOM LOAD! Check index.html.`);
+            console.error(`CRITICAL: Essential HTML element with ID '${id}' not found AFTER DOM LOAD!`);
             allElementsFound = false;
         }
     });
 
     if (!allElementsFound) {
-        alert("Critical Error: Page elements missing. Cannot initialize functionality.");
+         alert("Critical Error: Page elements missing. Cannot initialize functionality. Check console for details.");
         if (startButton) startButton.disabled = true;
-        return;
+        return; // Stop script execution
     }
+    console.log("All essential HTML elements verified after DOM Load.");
 
-    // --- Fetch trackers from tracker-list.txt ---
-    log('Attempting to load trackers from tracker-list.txt...');
-    fetch('tracker-list.txt')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`File not found or server error (${response.status})`);
-            }
-            return response.text();
-        })
-        .then(text => {
-            const lines = text.split('\n');
-            // --- Includes ALL non-comment, non-empty lines from the file ---
-            loadedTrackersFromFile = lines
-                .map(line => line.trim())
-                .filter(line => line && !line.startsWith('#')); // Keep ALL protocols (wss, https, http, udp)
 
-            if (loadedTrackersFromFile.length > 0) {
-                log(`Successfully loaded ${loadedTrackersFromFile.length} trackers from tracker-list.txt (All protocols included).`);
-                console.log("Trackers loaded from file:", loadedTrackersFromFile);
-            } else {
-                log('No trackers found in tracker-list.txt or file was empty/comments only.');
-            }
-        })
-        .catch(error => {
-            log(`Warning: Could not load 'tracker-list.txt': ${error.message}. Using default WSS trackers only.`);
-            console.warn("Tracker list fetch failed:", error);
-            loadedTrackersFromFile = [];
-        });
-    // --- End of Fetch Block ---
-
-    console.log("All essential HTML elements found after DOM Load.");
-
+    // Attach listener to the main start button
     startButton.addEventListener('click', () => {
         console.log('Start button clicked!');
         log('Start button action triggered...');
-        startButton.disabled = true;
-        startButton.textContent = 'Starting...';
+        startButton.disabled = true; // Disable immediately
 
         const torrentId = torrentIdInput.value.trim();
         const file = torrentFileInput.files.length > 0 ? torrentFileInput.files[0] : null;
 
-        console.log('Torrent ID input value:', torrentId);
-        console.log('Selected file object:', file);
+        console.log('Torrent ID input:', torrentId || '(empty)');
+        console.log('Selected file:', file ? file.name : '(none)');
 
-        let inputToUse = null;
-        let inputError = null;
-
+        // Prioritize file input
         if (file) {
             log(`Processing selected file: ${file.name}`);
-            inputToUse = file;
-            torrentIdInput.value = '';
+            startTorrent(file).catch(err => { // startTorrent is async now
+                 log(`Error during torrent start process: ${err.message}`);
+                 console.error("startTorrent Error:", err);
+                 startButton.disabled = false; // Re-enable on error
+             });
+            torrentIdInput.value = ''; // Clear other input
         } else if (torrentId) {
-            if (torrentId.startsWith('magnet:?xt=urn:btih:') || /^[a-fA-F0-9]{40}$/i.test(torrentId) || /^[a-fA-F0-9]{32}$/i.test(torrentId)) {
-                log(`Processing input ID/Magnet: ${torrentId.substring(0, 60)}...`);
-                inputToUse = torrentId;
-                torrentFileInput.value = '';
+            // Basic validation (magnet, http(s) .torrent link, infohash)
+            if (torrentId.startsWith('magnet:') ||
+                /^[a-fA-F0-9]{40}$/i.test(torrentId) || // SHA-1 Infohash
+                /^[a-fA-F0-9]{64}$/i.test(torrentId) || // SHA-256 Infohash (less common)
+                /^[a-fA-F0-9]{32}$/i.test(torrentId) || // v2 hybrid infohash part? (Be careful with assumptions)
+                (torrentId.startsWith('http://') || torrentId.startsWith('https://')) && torrentId.endsWith('.torrent')
+               )
+             {
+                 log(`Processing input: ${torrentId.substring(0, 70)}...`);
+                 startTorrent(torrentId).catch(err => {
+                     log(`Error during torrent start process: ${err.message}`);
+                     console.error("startTorrent Error:", err);
+                     startButton.disabled = false;
+                 });
+                 torrentFileInput.value = ''; // Clear file input
             } else {
-                inputError = 'Invalid Magnet URI or Info Hash format. Must start with "magnet:" or be a 40/32-character hex string.';
+                 log('Input Error: Invalid Magnet URI, Info Hash, or .torrent URL format.');
+                 console.log('Invalid input format detected.');
+                 startButton.disabled = false; // Re-enable button
             }
         } else {
-            inputError = 'Please enter a magnet link/info hash or select a .torrent file.';
+            log('Input Error: Please enter a magnet link/info hash/URL or select a .torrent file.');
+            console.log('No valid input found.');
+            startButton.disabled = false; // Re-enable button
         }
-
-        if (inputToUse) {
-            startTorrent(inputToUse);
-        } else if (inputError) {
-            log(`Input Error: ${inputError}`);
-            console.log('Invalid input provided.');
-            alert(inputError);
-        }
-
-        setTimeout(() => {
-            startButton.disabled = false;
-            startButton.textContent = 'Start Download / Stream';
-        }, 500);
+        // Note: startTorrent will re-enable the button itself upon completion/failure within its own scope.
     });
     console.log("Click listener added to startButton.");
 
+    // Listeners to clear the other input field when one is used
     torrentIdInput.addEventListener('input', () => {
-        if (torrentIdInput.value.trim() !== '') {
-            torrentFileInput.value = '';
+        if (torrentIdInput.value.trim() !== '' && torrentFileInput.value !== '') {
+             log("Clearing file input as text ID was entered.");
+             torrentFileInput.value = ''; // Clear file if text is typed
         }
     });
     console.log("Input listener added to torrentIdInput.");
 
     torrentFileInput.addEventListener('change', () => {
-        console.log('File input changed!');
         if (torrentFileInput.files.length > 0) {
-            const selectedFile = torrentFileInput.files[0];
-            console.log('File selected:', selectedFile.name);
-            log(`File selected via input: ${selectedFile.name}`);
-            torrentIdInput.value = '';
+             const selectedFile = torrentFileInput.files[0];
+             console.log('File selected via input:', selectedFile.name);
+             log(`File selected: ${selectedFile.name}`);
+             if (torrentIdInput.value.trim() !== '') {
+                 log("Clearing text input as file was selected.");
+                 torrentIdInput.value = ''; // Clear text if file is chosen
+             }
         } else {
-            console.log('File input cleared or no file selected.');
+             console.log('File input cleared or no file selected.');
+             // Do not clear the text input if the file input is cleared.
         }
     });
     console.log("Change listener added to torrentFileInput.");
 
+    // Initial log messages
     log('WebTorrent Client UI Initialized. Ready for input.');
     log("--------------------------------------------------");
     log("LEGAL DISCLAIMER: Only use this tool for content you have the legal right to share and download.");
     log("Downloading copyrighted material without permission may be illegal in your jurisdiction.");
     log("--------------------------------------------------");
-    log("Performance Tip: Keep this browser tab active for best download speeds.");
-    log("Note: Only WSS trackers significantly aid peer discovery in browsers. Other protocols may cause warnings.");
-    log("--------------------------------------------------");
+    log("Fetching initial tracker list...");
+    // Pre-fetch trackers on load so they might be ready for the first click
+    fetchTrackers().then(trackers => {
+        fetchedTrackers = trackers;
+        log(`Initial tracker fetch complete. ${trackers.length} trackers ready.`);
+    }).catch(err => {
+        log(`Initial tracker fetch failed: ${err.message}`);
+    });
 
 }); // End of DOMContentLoaded
 
+// Log message indicates script file itself has loaded, before DOM might be ready
 console.log("script.js loaded. Waiting for DOM content...");
-
-/* --- Where to add tracker list (tracker-list.txt) ---
-   Create a file named 'tracker-list.txt' in the same directory as your HTML file.
-   Add tracker URLs, one per line. Lines starting with # are ignored.
-   Example tracker-list.txt content:
-
-   # WSS Trackers (Recommended for Browser)
-   wss://tracker.openwebtorrent.com
-   wss://tracker.btorrent.xyz
-
-   # Other Trackers (Will likely cause warnings in browser console)
-   udp://tracker.opentrackr.org:1337/announce
-   http://tracker.opentrackr.org:1337/announce
-   https://tracker.example.com:443/announce
-
-*/
