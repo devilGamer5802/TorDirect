@@ -2,36 +2,47 @@
 // List of reliable public STUN servers (essential for WebRTC NAT traversal)
 const RTC_CONFIG = {
     iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        // *** FIX HERE: Removed ?transport=udp ***
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun.services.mozilla.com' },
-        // Add more STUN servers if needed.
-        // {
-        //   urls: 'turn:your-turn-server.com:3478',
-        //   username: 'your_username',
-        //   credential: 'your_password'
-        // }
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun.l.google.com:5349" },
+        { urls: "stun:stun1.l.google.com:3478" },
+        { urls: "stun:stun1.l.google.com:5349" },
+        { urls: "stun:stun2.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:5349" },
+        { urls: "stun:stun3.l.google.com:3478" },
+        { urls: "stun:stun3.l.google.com:5349" },
+        { urls: "stun:stun4.l.google.com:19302" },
+        { urls: "stun:stun4.l.google.com:5349" }
     ]
 };
 
-// List of reliable public WebSocket (WSS) trackers
-// These help connect browser peers that WebTorrent can talk to.
-// List of reliable public WebSocket (WSS) trackers
-// These help connect browser peers that WebTorrent can talk to.
 const DEFAULT_TRACKERS = [
-    'wss://tracker.openwebtorrent.com', // Didn't show error in logs
-    'wss://tracker.btorrent.xyz',     // Didn't show error in logs
-    // Keep webtorrent.io as it's standard, might have been temporary
+    // Reliable Core Trackers
+    'wss://tracker.openwebtorrent.com',
+    'wss://tracker.btorrent.xyz',
     'wss://tracker.webtorrent.io',
-    // Add a few more public alternatives
     'wss://tracker.webtorrent.dev',
-    'wss://tracker.files.fm:7073/announce', // Keep this one too, might be back online
-    'wss://spacetracker.org:443/announce', // Keep this one too
-    'wss://tracker.peerweb.site:443/announce'
-    // Note: UDP/HTTP trackers won't work directly in the browser.
+    'wss://tracker.peerweb.site:443/announce',
+
+    // Trackers filtered from user list (converted https -> wss)
+    'wss://tracker.yemekyedim.com:443/announce',
+    'wss://tracker.moeblog.cn:443/announce',
+    'wss://tracker.linvk.com:443/announce',
+    'wss://tracker.lilithraws.org:443/announce',
+    'wss://tracker.leechshield.link:443/announce',
+    'wss://tracker.itscraftsoftware.my.id:443/announce',
+    // 'wss://tracker.ghostchu-services.top:443/announce', // Often associated with sparkle
+    'wss://tracker.expli.top:443/announce',
+    'wss://tracker.bt4g.com:443/announce',
+    'wss://tr.zukizuki.org:443/announce',
+    'wss://tr.nyacat.pw:443/announce',
+    'wss://sparkle.ghostchu-services.top:443/announce',
+    // 'wss://chihaya.de:443/announce', // Can be unreliable for public use sometimes
+    'wss://tracker.zhuqiy.top:443/announce',
+    'wss://tracker.gcrenwp.top:443/announce',
+
+    // Other known public WSS trackers (add if needed)
+    // 'wss://tracker.files.fm:7073/announce', // Had errors before, keep commented for now
+    // 'wss://spacetracker.org:443/announce',   // Had errors before, keep commented for now
 ];
 
 // --- Initial Checks & Global Setup ---
