@@ -3,7 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TorDirect</title>
+    <title>TorDirect - WebTorrent Client | Direct Downloads & Streaming</title>
+    <meta name="description" content="Direct WebTorrent downloads and streaming in your browser. No installation required - just paste magnet links or upload .torrent files.">
+    <meta name="keywords" content="webtorrent, torrent, download, streaming, p2p, peer-to-peer, magnet, browser">
+    <meta name="author" content="DevilGamer5802">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://devilgamer5802.github.io/TorDirect/">
+    <meta property="og:title" content="TorDirect - WebTorrent Client">
+    <meta property="og:description" content="Direct WebTorrent downloads and streaming in your browser. No installation required.">
+    <meta property="og:image" content="https://devilgamer5802.github.io/TorDirect/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://devilgamer5802.github.io/TorDirect/">
+    <meta property="twitter:title" content="TorDirect - WebTorrent Client">
+    <meta property="twitter:description" content="Direct WebTorrent downloads and streaming in your browser. No installation required.">
+    <meta property="twitter:image" content="https://devilgamer5802.github.io/TorDirect/logo.png">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +45,7 @@
             </label>
             <button id="startButton">Start Transfer</button>
         </div>
+        <div id="webTorrentStatus" style="text-align: center; margin: 10px 0; font-size: 0.9em; color: #888;"></div>
          <p class="disclaimer"><strong>Disclaimer:</strong> Only use this tool for content you have the legal right to share and download. Downloading copyrighted material without permission may be illegal.</p>
     </section>
 
@@ -45,7 +64,6 @@
 
         <div id="player" class="content-box">
             <h2>Streaming Player</h2>
-            <h3 style="color:Red;">WARNING!!!!Broken due to webtorrent latest api. Stay updated for the fix.</h3>
             <!-- Video/Audio tags will be appended here -->
         </div>
     </main>
@@ -54,8 +72,76 @@
         <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>. Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
     </footer>
 
-    <!-- Include WebTorrent library from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
-    <script src="script.js"></script>
+    <!-- Include WebTorrent library with multiple fallbacks -->
+    <script>
+        // Function to load WebTorrent with fallbacks
+        async function loadWebTorrent() {
+            // Try ES6 module import first (recommended for modern browsers)
+            try {
+                const { default: WebTorrent } = await import('https://cdn.jsdelivr.net/npm/webtorrent@2.8.4/dist/webtorrent.min.js');
+                window.WebTorrent = WebTorrent;
+                console.log('WebTorrent loaded as ES6 module from jsdelivr');
+                loadMainScript();
+                return;
+            } catch (e) {
+                console.warn('ES6 module import failed, trying UMD version:', e);
+            }
+
+            // Fallback to UMD version for broader compatibility
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/webtorrent@1.9.7/webtorrent.min.js', // Stable UMD version
+                'https://unpkg.com/webtorrent@1.9.7/webtorrent.min.js',
+                './webtorrent.min.js' // Local fallback
+            ];
+            
+            let currentScript = 0;
+            
+            function tryLoadScript() {
+                if (currentScript >= scripts.length) {
+                    console.error('All WebTorrent CDN sources failed');
+                    document.getElementById('webTorrentStatus').innerHTML = 
+                        '<span style="color: red;">❌ Failed to load WebTorrent library</span>';
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = scripts[currentScript];
+                script.onload = () => {
+                    console.log(`WebTorrent loaded successfully from: ${scripts[currentScript]}`);
+                    document.getElementById('webTorrentStatus').innerHTML = 
+                        '<span style="color: green;">✅ WebTorrent library loaded</span>';
+                    loadMainScript();
+                };
+                script.onerror = () => {
+                    console.warn(`Failed to load WebTorrent from: ${scripts[currentScript]}`);
+                    currentScript++;
+                    tryLoadScript();
+                };
+                document.head.appendChild(script);
+            }
+            
+            tryLoadScript();
+        }
+        
+        function loadMainScript() {
+            // Load the main script after WebTorrent is loaded
+            const mainScript = document.createElement('script');
+            mainScript.src = 'script.js';
+            mainScript.onload = () => {
+                console.log('Main script loaded successfully');
+            };
+            mainScript.onerror = () => {
+                console.error('Failed to load main script');
+            };
+            document.head.appendChild(mainScript);
+        }
+        
+        // Start loading when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadWebTorrent);
+        } else {
+            loadWebTorrent();
+        }
+    </script>
 </body>
 </html>

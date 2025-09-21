@@ -1,0 +1,31 @@
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Node modules (if ever added)
+node_modules/
+npm-debug.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+test-*.html
+debug-*.html
+local-*.html
+*-test.*
+
+# Documentation drafts
+*_DRAFT.*
+API_UPDATES.*
+FIX_SUMMARY.*
+
+# Backup files
+*.bak
+*.backup
+*~

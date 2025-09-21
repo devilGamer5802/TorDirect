@@ -1,8 +1,5 @@
 <div align="center">
 
-  <!-- Optional: Replace with your own logo/banner image -->
-  <!-- <img src="path/to/your/banner.png" alt="TorDirect Banner" width="800"/> -->
-  
   <h1>⚡ TorDirect ⚡</h1>
   
   <p><strong>Direct WebTorrent Downloads & Streaming in Your Browser.</strong></p>
@@ -17,9 +14,6 @@
     <img src="https://img.shields.io/github/last-commit/DevilGamer5802/TorDirect?style=for-the-badge&color=yellow" alt="Last Commit">
     <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-informational?style=for-the-badge" alt="License">
-    </a> 
-    <a href="https://github.com/DevilGamer5802/TorDirect/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/DevilGamer5802/TorDirect/static.yml?style=for-the-badge" alt="Build Status">
     </a>
   </p>
   <a href="https://devilgamer5802.github.io/TorDirect/" target="_blank">
@@ -32,16 +26,12 @@
 
 ## ✨ Overview
 
-TorDirect leverages the power of **WebTorrent** and **WebRTC** to bring torrent downloading and streaming directly to your web browser. Paste a magnet link or select a `.torrent` file, and start transferring data peer-to-peer without relying on intermediary servers for the actual file transfer.
+TorDirect leverages the power of **WebTorrent 2.8.4** and **WebRTC** to bring torrent downloading and streaming directly to your web browser. Paste a magnet link or select a `.torrent` file, and start transferring data peer-to-peer without relying on intermediary servers for the actual file transfer.
 
 Hosted entirely via GitHub Pages, it showcases a modern, serverless approach to file sharing.
 
 <div align="center">
-  
-  <!-- *** Add a Screenshot or GIF Here! *** -->
-  <!-- Replace the src with the path to your screenshot/gif in the repo -->
   <img src="TorDirect.gif" alt="TorDirect Screenshot" width="700" style="border-radius: 8px; margin-top: 20px; margin-bottom: 20px; border: 1px solid #555;"/>
-  
 </div>
 
 ## 🚀 Features
