@@ -8,11 +8,25 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* Minimal helpful styles so UI looks tidy if your style.css is missing */
+    body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:24px; color:#111; }
+    header h1 { margin:0 0 16px 0; font-size:20px; }
+    .hero { margin-bottom:20px; }
+    .input-area { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    input[type="text"] { padding:8px; min-width:300px; }
+    .file-label { display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .content-area { display:grid; grid-template-columns: 320px 1fr; gap:16px; align-items:start; }
+    .content-box { padding:12px; border:1px solid #eee; border-radius:8px; background:#fafafa; min-height:120px; }
+    #logs { max-height:240px; overflow:auto; font-size:13px; color:#333; }
+    #fileList li { margin:8px 0; }
+    button { padding:6px 10px; cursor:pointer; }
+  </style>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="My Torrent Client - Logo and Title" class="logo-image" />
-    <h1>TorDirect - Your Personal Torrent Web Client</h1>
+    <img src="logo.png" alt="Logo" style="height:48px; vertical-align:middle; margin-right:12px;">
+    <h1 style="display:inline-block; vertical-align:middle;">TorDirect - Your Personal Torrent Web Client</h1>
   </header>
 
   <section class="hero">
@@ -20,16 +34,9 @@
     <p class="subtitle">Download & Stream Torrents Directly in Your Browser</p>
     <div class="input-area">
       <input type="text" id="torrentIdInput" placeholder="Paste Magnet Link or Info Hash..." />
-      <label class="file-label">
-        <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-               class="bi bi-file-earmark-arrow-up" viewBox="0 0 16 16">
-            <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707V11.5z"/>
-            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
-          </svg>
-          Or Choose File
-        </span>
-        <input type="file" id="torrentFileInput" accept=".torrent" />
+      <label class="file-label" title="Select a .torrent file">
+        <span>📁 Or Choose File</span>
+        <input type="file" id="torrentFileInput" accept=".torrent" style="display:none;">
       </label>
       <button id="startButton">Start Transfer</button>
     </div>
@@ -56,59 +63,82 @@
     </div>
   </main>
 
-  <footer>
-    <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>. Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
+  <footer style="margin-top:18px;">
+    <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>. Designed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
   </footer>
 
-  <!-- Module-aware loader (tries ESM from unpkg first, exposes window.WebTorrent, then loads script.js) -->
+  <!-- Module-aware WebTorrent loader:
+       1) Try ESM import from unpkg (recommended for GitHub Pages)
+       2) Fallback to local UMD at ./dist/webtorrent.min.js (your repo's dist folder)
+       3) Final fallback to ./webtorrent.min.js (root) if present
+       After WebTorrent is available, inject script.js
+  -->
   <script type="module">
     (async () => {
       const logsEl = document.getElementById('logs');
       const playerNote = document.getElementById('player-note');
       function writeLog(msg) { if (logsEl) logsEl.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + logsEl.innerHTML; }
 
-      // Try ESM entry from unpkg (good for GitHub Pages)
+      // 1) Try ESM from unpkg first
       try {
-        writeLog('Importing WebTorrent ESM from unpkg...');
+        writeLog('Attempting to import WebTorrent ESM from unpkg...');
         const mod = await import('https://unpkg.com/webtorrent@2.8.4/index.js');
-        // normalize export -> window.WebTorrent
         window.WebTorrent = mod.default || mod.WebTorrent || mod;
-        if (!window.WebTorrent) throw new Error('Module missing WebTorrent export');
-        writeLog('WebTorrent ESM loaded (unpkg).');
+        if (!window.WebTorrent) throw new Error('Imported module did not expose WebTorrent');
+        writeLog('WebTorrent ESM loaded from unpkg.');
         playerNote.textContent = 'WebTorrent loaded (ESM).';
       } catch (esmErr) {
-        console.warn('ESM import failed', esmErr);
+        console.warn('ESM import failed:', esmErr);
         writeLog('ESM import failed: ' + (esmErr && esmErr.message ? esmErr.message : esmErr));
-        // Fallback: try a local UMD bundle (place webtorrent.min.js in repo root to use)
+
+        // 2) Fallback: ./dist/webtorrent.min.js
         try {
-          writeLog('Attempting local UMD fallback: webtorrent.min.js');
+          writeLog('Attempting local UMD fallback at ./dist/webtorrent.min.js');
           await new Promise((resolve, reject) => {
             const s = document.createElement('script');
-            s.src = 'webtorrent.min.js';
+            s.src = './dist/webtorrent.min.js';
             s.onload = () => resolve();
-            s.onerror = () => reject(new Error('Local UMD load failed'));
+            s.onerror = () => reject(new Error('Failed to load ./dist/webtorrent.min.js'));
             document.head.appendChild(s);
           });
-          if (!window.WebTorrent) throw new Error('Local UMD loaded but window.WebTorrent missing');
-          writeLog('Local WebTorrent UMD loaded.');
-          playerNote.textContent = 'WebTorrent loaded (local UMD).';
-        } catch (localErr) {
-          console.error('Both ESM and local UMD failed', esmErr, localErr);
-          writeLog('FATAL: Could not load WebTorrent ESM or local UMD. Please add webtorrent.min.js to repo or enable CDN access.');
-          playerNote.textContent = 'FATAL: WebTorrent failed to load — check logs.';
-          return; // stop — app will not start
+          if (!window.WebTorrent) throw new Error('Local dist UMD loaded but window.WebTorrent missing');
+          writeLog('WebTorrent UMD loaded from ./dist/webtorrent.min.js');
+          playerNote.textContent = 'WebTorrent loaded (local dist UMD).';
+        } catch (distErr) {
+          console.warn('Local dist fallback failed:', distErr);
+          writeLog('Local dist fallback failed: ' + (distErr && distErr.message ? distErr.message : distErr));
+
+          // 3) Final fallback: ./webtorrent.min.js
+          try {
+            writeLog('Attempting secondary local fallback at ./webtorrent.min.js');
+            await new Promise((resolve, reject) => {
+              const s2 = document.createElement('script');
+              s2.src = './webtorrent.min.js';
+              s2.onload = () => resolve();
+              s2.onerror = () => reject(new Error('Failed to load ./webtorrent.min.js'));
+              document.head.appendChild(s2);
+            });
+            if (!window.WebTorrent) throw new Error('Local root UMD loaded but window.WebTorrent missing');
+            writeLog('WebTorrent UMD loaded from ./webtorrent.min.js');
+            playerNote.textContent = 'WebTorrent loaded (local root UMD).';
+          } catch (rootErr) {
+            console.error('All WebTorrent load attempts failed:', esmErr, distErr, rootErr);
+            writeLog('FATAL: Could not load WebTorrent. Place dist/webtorrent.min.js or webtorrent.min.js in the repo or enable CDN access.');
+            playerNote.textContent = 'FATAL: WebTorrent failed to load — check logs.';
+            return;
+          }
         }
       }
 
-      // After WebTorrent is available, inject the app script (script.js)
+      // Inject application script after WebTorrent is available
       try {
         const app = document.createElement('script');
         app.src = 'script.js';
-        app.onload = () => writeLog('App script loaded.');
-        app.onerror = (e) => writeLog('Failed to load app script (script.js).');
+        app.onload = () => writeLog('App script loaded (script.js).');
+        app.onerror = () => writeLog('Failed to load app script (script.js).');
         document.body.appendChild(app);
       } catch (e) {
-        writeLog('Failed to inject app script: ' + e.message);
+        writeLog('Failed to inject app script: ' + (e && e.message ? e.message : e));
       }
     })();
   </script>
