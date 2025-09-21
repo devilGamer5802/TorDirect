@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TorDirect</title>
   <link rel="stylesheet" href="style.css" />
@@ -22,7 +22,6 @@
       <input type="text" id="torrentIdInput" placeholder="Paste Magnet Link or Info Hash..." />
       <label class="file-label">
         <span>
-          <!-- icon -->
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
                class="bi bi-file-earmark-arrow-up" viewBox="0 0 16 16">
             <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707V11.5z"/>
@@ -52,96 +51,65 @@
 
     <div id="player" class="content-box">
       <h2>Streaming Player</h2>
-      <h3 style="color:green;">Note: WebTorrent dependency will be loaded before the app starts.</h3>
+      <h3 id="player-note" style="color:green;">Loading WebTorrent…</h3>
       <!-- Video/Audio tags will be appended here -->
     </div>
   </main>
 
   <footer>
-    <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>.
-      Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
+    <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>. Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
   </footer>
 
-  <!--
-    Smart loader: tries multiple CDNs (jsdelivr, unpkg) and then a local fallback (webtorrent.min.js).
-    When a WebTorrent bundle is successfully loaded, it injects your app script (script.fixed.js).
-    Replace script.fixed.js with script.js if you prefer that filename.
-  -->
-  <script>
-    (function () {
-      // CDN fallbacks, in order
-      const urls = [
-        'https://cdn.jsdelivr.net/npm/webtorrent@2.8.4/webtorrent.min.js',
-        'https://unpkg.com/webtorrent@2.8.4/webtorrent.min.js'
-      ];
+  <!-- Module-aware loader (tries ESM from unpkg first, exposes window.WebTorrent, then loads script.js) -->
+  <script type="module">
+    (async () => {
+      const logsEl = document.getElementById('logs');
+      const playerNote = document.getElementById('player-note');
+      function writeLog(msg) { if (logsEl) logsEl.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + logsEl.innerHTML; }
 
-      // Local fallback filename - keep a copy of webtorrent.min.js in your project root if you need offline
-      const localFallback = 'webtorrent.min.js';
-
-      function appendScript(src) {
-        return new Promise((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = src;
-          s.crossOrigin = 'anonymous';
-          s.onload = () => resolve(src);
-          s.onerror = () => reject(new Error('Failed to load ' + src));
-          document.head.appendChild(s);
-        });
-      }
-
-      async function loadLibrary() {
-        const logsEl = document.getElementById('logs');
-        function writeLog(t) { if (logsEl) logsEl.innerHTML = `[${new Date().toLocaleTimeString()}] ${t}<br>` + logsEl.innerHTML; }
-
-        writeLog('Attempting to load WebTorrent library from CDN(s)...');
-        for (const u of urls) {
-          try {
-            await appendScript(u);
-            writeLog('Loaded WebTorrent from: ' + u);
-            if (window.WebTorrent) return true;
-          } catch (e) {
-            console.warn(e);
-            writeLog('Failed to load: ' + u);
-          }
-        }
-
-        // Try local fallback
+      // Try ESM entry from unpkg (good for GitHub Pages)
+      try {
+        writeLog('Importing WebTorrent ESM from unpkg...');
+        const mod = await import('https://unpkg.com/webtorrent@2.8.4/index.js');
+        // normalize export -> window.WebTorrent
+        window.WebTorrent = mod.default || mod.WebTorrent || mod;
+        if (!window.WebTorrent) throw new Error('Module missing WebTorrent export');
+        writeLog('WebTorrent ESM loaded (unpkg).');
+        playerNote.textContent = 'WebTorrent loaded (ESM).';
+      } catch (esmErr) {
+        console.warn('ESM import failed', esmErr);
+        writeLog('ESM import failed: ' + (esmErr && esmErr.message ? esmErr.message : esmErr));
+        // Fallback: try a local UMD bundle (place webtorrent.min.js in repo root to use)
         try {
-          await appendScript(localFallback);
-          writeLog('Loaded WebTorrent from local fallback: ' + localFallback);
-          if (window.WebTorrent) return true;
-        } catch (e) {
-          console.error(e);
-          writeLog('Local fallback failed: ' + localFallback);
+          writeLog('Attempting local UMD fallback: webtorrent.min.js');
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'webtorrent.min.js';
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Local UMD load failed'));
+            document.head.appendChild(s);
+          });
+          if (!window.WebTorrent) throw new Error('Local UMD loaded but window.WebTorrent missing');
+          writeLog('Local WebTorrent UMD loaded.');
+          playerNote.textContent = 'WebTorrent loaded (local UMD).';
+        } catch (localErr) {
+          console.error('Both ESM and local UMD failed', esmErr, localErr);
+          writeLog('FATAL: Could not load WebTorrent ESM or local UMD. Please add webtorrent.min.js to repo or enable CDN access.');
+          playerNote.textContent = 'FATAL: WebTorrent failed to load — check logs.';
+          return; // stop — app will not start
         }
-
-        // All attempts failed
-        writeLog('Fatal: Could not load WebTorrent library. App will not start.');
-        return false;
       }
 
-      // Load library, then the app script
-      (async function () {
-        const ok = await loadLibrary();
-        if (!ok) {
-          // Show a visible, clear message too
-          const logsEl = document.getElementById('logs');
-          if (logsEl) {
-            logsEl.innerHTML = '<span style="color:red">FATAL: WebTorrent library could not be loaded. Check network or provide webtorrent.min.js locally.</span><br>' + logsEl.innerHTML;
-          } else {
-            alert('FATAL: WebTorrent library could not be loaded. Check network or provide webtorrent.min.js locally.');
-          }
-          return;
-        }
-
-        // Inject your app script *after* library loaded.
-        // If your app file is named 'script.js', change the filename below.
-        const appScript = document.createElement('script');
-        appScript.src = 'script.fixed.js';
-        appScript.onload = function () { console.log('App script loaded'); };
-        appScript.onerror = function () { console.error('Failed to load app script (script.fixed.js)'); var logsEl = document.getElementById('logs'); if (logsEl) logsEl.innerHTML='Failed to load app script (script.fixed.js).<br>'+logsEl.innerHTML; };
-        document.body.appendChild(appScript);
-      })();
+      // After WebTorrent is available, inject the app script (script.js)
+      try {
+        const app = document.createElement('script');
+        app.src = 'script.js';
+        app.onload = () => writeLog('App script loaded.');
+        app.onerror = (e) => writeLog('Failed to load app script (script.js).');
+        document.body.appendChild(app);
+      } catch (e) {
+        writeLog('Failed to inject app script: ' + e.message);
+      }
     })();
   </script>
 </body>
