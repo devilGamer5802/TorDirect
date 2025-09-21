@@ -1,8 +1,6 @@
-// script.js - compatible with WebTorrent v2.8.4 loaded as window.WebTorrent (or local UMD).
-// Browser-only script; uses file.appendTo / file.streamTo / blob fallback.
-// Requires elements with IDs: torrentIdInput, torrentFileInput, startButton, logs, progress, peers, fileList, player
+// script.js - Browser app compatible with WebTorrent v2.8.4
+// Expects a WebTorrent bundle available as window.WebTorrent (set by index.html loader)
 
-// DOM refs
 const torrentIdInput = document.getElementById('torrentIdInput');
 const torrentFileInput = document.getElementById('torrentFileInput');
 const startButton = document.getElementById('startButton');
@@ -15,7 +13,6 @@ const playerDiv = document.getElementById('player');
 let client = null;
 let fetchedTrackers = [];
 
-// Utility logging
 function log(message) {
   console.log(message);
   if (!logsDiv) return;
@@ -24,7 +21,6 @@ function log(message) {
   logsDiv.innerHTML = `[${time}] ${sanitized}<br>` + logsDiv.innerHTML;
 }
 
-// small helper for bytes/time
 function formatBytes(bytes, decimals = 2) {
   if (!bytes || isNaN(bytes) || bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -32,6 +28,7 @@ function formatBytes(bytes, decimals = 2) {
   const sizes = ['Bytes','KB','MB','GB','TB'];
   return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + (sizes[i] || 'Bytes');
 }
+
 function formatTime(seconds) {
   if (!seconds || !isFinite(seconds) || seconds < 0) return 'N/A';
   const total = Math.round(seconds);
@@ -41,12 +38,11 @@ function formatTime(seconds) {
   return (h > 0 ? `${String(h).padStart(2,'0')}:` : '') + `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-// Fetch trackers (tracker.txt -> API -> GitHub fallback). Keep only ws/wss lines.
 async function fetchTrackers() {
   log('Fetching trackers...');
   const combined = new Set();
 
-  // local tracker.txt
+  // local tracker.txt (only ws/wss)
   try {
     const r = await fetch('tracker.txt');
     if (r.ok) {
@@ -56,7 +52,7 @@ async function fetchTrackers() {
     }
   } catch (e) { log('No local tracker.txt or failed to fetch.'); }
 
-  // API via proxy - optional
+  // remote API via proxy (optional)
   try {
     const api = 'https://newtrackon.com/api/stable';
     const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(api)}`;
@@ -68,7 +64,7 @@ async function fetchTrackers() {
     }
   } catch (e) { log('Failed to fetch trackers via proxy.'); }
 
-  // GitHub fallback
+  // fallback GitHub list
   if (combined.size === 0) {
     try {
       const gh = 'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt';
@@ -81,16 +77,14 @@ async function fetchTrackers() {
     } catch (e) { log('Failed to fetch trackers from GitHub.'); }
   }
 
-  // Add some defaults
-  ['wss://tracker.webtorrent.io', 'wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz']
-    .forEach(d => combined.add(d));
+  // defaults
+  ['wss://tracker.webtorrent.io', 'wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz'].forEach(d => combined.add(d));
 
   fetchedTrackers = Array.from(combined);
   log(`Total trackers: ${fetchedTrackers.length}`);
   return fetchedTrackers;
 }
 
-// display files for a torrent
 function displayFiles(torrent) {
   if (!fileListUl || !playerDiv) return;
   fileListUl.innerHTML = '';
@@ -111,7 +105,6 @@ function displayFiles(torrent) {
     dlBtn.onclick = async () => {
       dlBtn.disabled = true; dlBtn.textContent = 'Preparing...';
       try {
-        // prefer getBlobURL or getBlob
         if (typeof file.getBlobURL === 'function' || typeof file.getBlob === 'function') {
           const url = await new Promise((resolve, reject) => {
             if (typeof file.getBlobURL === 'function') {
@@ -136,13 +129,7 @@ function displayFiles(torrent) {
     streamBtn.disabled = !streamable;
     streamBtn.onclick = async () => {
       streamBtn.disabled = true;
-      try {
-        await streamFileToPlayer(file);
-      } catch (e) {
-        log('Stream failed: ' + (e && e.message ? e.message : e));
-      } finally {
-        streamBtn.disabled = false;
-      }
+      try { await streamFileToPlayer(file); } catch (e) { log('Stream failed: ' + (e && e.message ? e.message : e)); } finally { streamBtn.disabled = false; }
     };
     actions.appendChild(streamBtn);
 
@@ -151,38 +138,33 @@ function displayFiles(torrent) {
   });
 }
 
-// stream a file: prefer file.streamTo -> file.appendTo -> blob fallback
 async function streamFileToPlayer(file) {
   if (!playerDiv) throw new Error('Player element missing');
   const safeName = file.name || file.path || 'Unknown';
   playerDiv.innerHTML = `<h2>Streaming: ${safeName}</h2><p><i>Preparing stream...</i></p>`;
 
-  // prefer streamTo (worker-enabled)
+  // prefer streamTo
   if (typeof file.streamTo === 'function') {
     const video = document.createElement('video');
     video.controls = true; video.autoplay = false; video.style.maxWidth = '100%';
     playerDiv.appendChild(video);
     await new Promise((resolve, reject) => {
-      try {
-        file.streamTo(video, (err, el) => err ? reject(err) : resolve(el || video));
-      } catch (e) { reject(e); }
+      try { file.streamTo(video, (err, el) => err ? reject(err) : resolve(el || video)); } catch (e) { reject(e); }
     });
     attachMediaListeners(playerDiv.querySelector('video') || playerDiv.querySelector('audio'));
     return;
   }
 
-  // else appendTo
+  // appendTo fallback
   if (typeof file.appendTo === 'function') {
     await new Promise((resolve, reject) => {
-      try {
-        file.appendTo(playerDiv, { autoplay: false, controls: true }, (err, elem) => err ? reject(err) : resolve(elem));
-      } catch (e) { reject(e); }
+      try { file.appendTo(playerDiv, { autoplay: false, controls: true }, (err, elem) => err ? reject(err) : resolve(elem)); } catch (e) { reject(e); }
     });
     attachMediaListeners(playerDiv.querySelector('video') || playerDiv.querySelector('audio'));
     return;
   }
 
-  // else blob fallback
+  // blob fallback
   if (typeof file.getBlobURL === 'function' || typeof file.getBlob === 'function') {
     const url = await new Promise((resolve, reject) => {
       if (typeof file.getBlobURL === 'function') {
@@ -211,7 +193,6 @@ function attachMediaListeners(elem) {
   elem.addEventListener('error', () => { log('Media error'); statusP.innerHTML = '<span style="color:red">❌ Playback error</span>'; });
 }
 
-// update progress UI
 function updateProgress(torrent) {
   if (!progressDiv || !peersDiv) return;
   const percent = ((torrent.progress || 0) * 100).toFixed(2);
@@ -219,12 +200,11 @@ function updateProgress(torrent) {
   const total = formatBytes(torrent.length || 0);
   const dlSpeed = formatBytes(torrent.downloadSpeed || 0) + '/s';
   const ulSpeed = formatBytes(torrent.uploadSpeed || 0) + '/s';
-  const remaining = torrent.timeRemaining && isFinite(torrent.timeRemaining) ? formatTime(torrent.timeRemaining / 1000) : (torrent.done ? 'Done' : 'N/A');
+  const remaining = (torrent.timeRemaining && isFinite(torrent.timeRemaining)) ? formatTime(torrent.timeRemaining / 1000) : (torrent.done ? 'Done' : 'N/A');
   progressDiv.innerHTML = `Torrent: ${torrent.name || torrent.infoHash}<br/>Progress: ${percent}%<br/>Downloaded: ${downloaded} / ${total}<br/>Speed: ↓ ${dlSpeed} / ↑ ${ulSpeed}<br/>Time Remaining: ${remaining}`;
   peersDiv.innerText = `Peers: ${torrent.numPeers || 0}`;
 }
 
-// Initialize and add torrent
 function initializeAndAddTorrent(torrentId, trackers) {
   if (typeof window.WebTorrent === 'undefined') {
     log('Fatal: WebTorrent not available.');
@@ -234,7 +214,7 @@ function initializeAndAddTorrent(torrentId, trackers) {
   try {
     client = new window.WebTorrent();
   } catch (e) {
-    log('Client init failed: ' + e.message);
+    log('Client init failed: ' + (e && e.message ? e.message : e));
     return;
   }
 
@@ -260,12 +240,11 @@ function initializeAndAddTorrent(torrentId, trackers) {
   }
 }
 
-// start torrent flow
 async function startTorrent(torrentIdOrFile) {
   if (startButton) startButton.disabled = true;
   if (client) {
     log('Destroying previous client...');
-    try { await new Promise(resolve => client.destroy(resolve)); client = null; } catch (e) { log('Destroy error: ' + e.message); client = null; }
+    try { await new Promise(resolve => client.destroy(resolve)); client = null; } catch (e) { log('Destroy error: ' + (e && e.message ? e.message : e)); client = null; }
   }
 
   try {
@@ -276,7 +255,6 @@ async function startTorrent(torrentIdOrFile) {
   if (startButton) startButton.disabled = false;
 }
 
-// DOM ready wiring
 document.addEventListener('DOMContentLoaded', () => {
   if (!torrentIdInput || !torrentFileInput || !startButton || !logsDiv || !progressDiv || !peersDiv || !fileListUl || !playerDiv) {
     alert('Missing essential elements; check HTML IDs.');
@@ -286,22 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
   startButton.addEventListener('click', () => {
     const torrentId = torrentIdInput.value.trim();
     const file = torrentFileInput.files && torrentFileInput.files[0];
-    if (file) {
-      log('Starting from .torrent file: ' + file.name);
-      startTorrent(file);
-      torrentIdInput.value = '';
-    } else if (torrentId) {
-      log('Starting from magnet/info hash/url.');
-      startTorrent(torrentId);
-      torrentFileInput.value = '';
-    } else {
-      log('Input Error: Provide a magnet link/info hash or select a .torrent file.');
-    }
+    if (file) { log('Starting from .torrent file: ' + file.name); startTorrent(file); torrentIdInput.value = ''; }
+    else if (torrentId) { log('Starting from magnet/info hash/url.'); startTorrent(torrentId); torrentFileInput.value = ''; }
+    else { log('Input Error: Provide a magnet link/info hash or select a .torrent file.'); }
   });
 
   torrentIdInput.addEventListener('input', () => { if (torrentIdInput.value.trim() !== '' && torrentFileInput.value !== '') torrentFileInput.value = ''; });
   torrentFileInput.addEventListener('change', () => { if (torrentFileInput.files.length > 0 && torrentIdInput.value.trim() !== '') torrentIdInput.value = ''; });
 
-  // attempt initial tracker fetch
-  fetchTrackers().then(t => { log('Initial trackers loaded: ' + t.length); }).catch(e => log('Initial tracker fetch failed: ' + e.message));
+  // initial tracker fetch
+  fetchTrackers().then(t => { log('Initial trackers loaded: ' + t.length); }).catch(e => log('Initial tracker fetch failed: ' + (e && e.message ? e.message : e)));
 });
