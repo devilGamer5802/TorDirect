@@ -1,8 +1,6 @@
 /* videostream.js - Browser VideoStream (no Node-only deps)
-   Works if you have a remuxer exposed as window.MP4Remuxer (optional).
-   Otherwise the script prefers file.streamTo(), file.appendTo(), or getBlob()/getBlobURL() on the WebTorrent File object.
+   Optional: works with a remuxer exposed at window.MP4Remuxer. Otherwise it uses file.streamTo / file.appendTo / blob fallback.
 */
-
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.VideoStream = factory();
@@ -45,10 +43,7 @@
       try {
         this._muxer = new window.MP4Remuxer(this._file);
         this._muxer.on('ready', function (data) {
-          // data: [{ mime, init }, ...]
-          self._tracks = data.map(function (td) {
-            return { muxed: null, writer: { initFlushed: false, onInitFlushed: null }, initFlushed: false, onInitFlushed: null };
-          });
+          self._tracks = data.map(function (td) { return { muxed: null, writer: { initFlushed:false, onInitFlushed:null }, initFlushed:false, onInitFlushed:null }; });
           if (self._waitingFired || self._elem.preload === 'auto') self._pump();
         });
         this._muxer.on('error', function (err) { try { self._elem.error = err; } catch (e) {} self.destroy(); });
@@ -59,7 +54,6 @@
     }
   };
 
-  // Primary streaming method (exposed if user wants to call). But typical usage is to let script.js call file.appendTo / streamTo.
   VideoStream.prototype.stream = function () {
     var file = this._file;
     var elem = this._elem;
@@ -79,7 +73,7 @@
     if (file && typeof file.appendTo === 'function') {
       return new Promise(function (resolve, reject) {
         try {
-          file.appendTo(elem, { autoplay: false, controls: true }, function (err, el) { if (err) { self.destroy(); reject(err); } else resolve(el); });
+          file.appendTo(elem, { autoplay:false, controls:true }, function (err, el) { if (err) { self.destroy(); reject(err); } else resolve(el); });
         } catch (e) { reject(e); }
       });
     }
