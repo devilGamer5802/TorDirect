@@ -1,127 +1,126 @@
-/* videostream.js - Browser VideoStream (no Node-only deps)
-   Optional: works with a remuxer exposed at window.MP4Remuxer. Otherwise it uses file.streamTo / file.appendTo / blob fallback.
-*/
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.VideoStream = factory();
-}(typeof self !== 'undefined' ? self : this, function () {
+const MediaElementWrapper = require('mediasource')
+const pump = require('pump')
 
-  function VideoStream(file, mediaElem, opts) {
-    if (!(this instanceof VideoStream)) return new VideoStream(file, mediaElem, opts);
-    opts = opts || {};
-    this._file = file;
-    this._elem = mediaElem;
-    this._destroyed = false;
-    this._waitingFired = false;
-    this._tracks = null;
-    this._muxer = null;
-    this._ms = null;
+const MP4Remuxer = require('./mp4-remuxer')
 
-    this._onWaiting = this._onWaiting.bind(this);
-    this._onError = this._onError.bind(this);
-
-    mediaElem.addEventListener('waiting', this._onWaiting);
-    mediaElem.addEventListener('error', this._onError);
-
-    if (this._elem.preload !== 'none') this._maybeCreateMuxer();
+function VideoStream (file, mediaElem, opts = {}) {
+  if (!(this instanceof VideoStream)) {
+    console.warn("Don't invoke VideoStream without the 'new' keyword.")
+    return new VideoStream(file, mediaElem, opts)
   }
 
-  VideoStream.prototype._onError = function () {
-    try { this.detailedError = this._elem && this._elem.error ? this._elem.error : null; } catch (e) {}
-    this.destroy();
-  };
+  this.detailedError = null
 
-  VideoStream.prototype._onWaiting = function () {
-    this._waitingFired = true;
-    if (!this._muxer) this._maybeCreateMuxer();
-    else if (this._tracks) this._pump();
-  };
+  this._elem = mediaElem
+  this._elemWrapper = new MediaElementWrapper(mediaElem)
+  this._waitingFired = false
+  this._trackMeta = null
+  this._file = file
+  this._tracks = null
 
-  VideoStream.prototype._maybeCreateMuxer = function () {
-    var self = this;
-    if (typeof window !== 'undefined' && window.MP4Remuxer) {
-      try {
-        this._muxer = new window.MP4Remuxer(this._file);
-        this._muxer.on('ready', function (data) {
-          self._tracks = data.map(function (td) { return { muxed: null, writer: { initFlushed:false, onInitFlushed:null }, initFlushed:false, onInitFlushed:null }; });
-          if (self._waitingFired || self._elem.preload === 'auto') self._pump();
-        });
-        this._muxer.on('error', function (err) { try { self._elem.error = err; } catch (e) {} self.destroy(); });
-      } catch (e) {
-        console.warn('MP4Remuxer init failed, falling back to built-ins', e);
-        this._muxer = null;
-      }
+  if (this._elem.preload !== 'none') {
+    this._createMuxer()
+  }
+
+  this._onError = () => {
+    this.detailedError = this._elemWrapper.detailedError
+    this.destroy() // don't pass err though so the user doesn't need to listen for errors
+  }
+
+  this._onWaiting = () => {
+    this._waitingFired = true
+    if (!this._muxer) {
+      this._createMuxer()
+    } else if (this._tracks) {
+      this._pump()
     }
-  };
+  }
 
-  VideoStream.prototype.stream = function () {
-    var file = this._file;
-    var elem = this._elem;
-    var self = this;
+  if (mediaElem.autoplay) { mediaElem.preload = 'auto' }
+  mediaElem.addEventListener('waiting', this._onWaiting)
+  mediaElem.addEventListener('error', this._onError)
+}
 
-    if (file && typeof file.streamTo === 'function') {
-      return new Promise(function (resolve, reject) {
-        try {
-          var video = elem.tagName && (elem.tagName.toLowerCase() === 'video' || elem.tagName.toLowerCase() === 'audio') ? elem : document.createElement('video');
-          video.controls = true;
-          if (!video.parentElement) elem.parentElement && elem.parentElement.appendChild(video);
-          file.streamTo(video, function (err, el) { if (err) { self.destroy(); reject(err); } else resolve(el || video); });
-        } catch (e) { reject(e); }
-      });
-    }
-
-    if (file && typeof file.appendTo === 'function') {
-      return new Promise(function (resolve, reject) {
-        try {
-          file.appendTo(elem, { autoplay:false, controls:true }, function (err, el) { if (err) { self.destroy(); reject(err); } else resolve(el); });
-        } catch (e) { reject(e); }
-      });
-    }
-
-    if (file && (typeof file.getBlobURL === 'function' || typeof file.getBlob === 'function')) {
-      return new Promise(function (resolve, reject) {
-        try {
-          if (typeof file.getBlobURL === 'function') {
-            file.getBlobURL(function (err, url) { if (err) reject(err); else { elem.src = url; resolve(elem); } });
-            return;
+VideoStream.prototype = {
+  _createMuxer () {
+    this._muxer = new MP4Remuxer(this._file)
+    this._muxer.on('ready', data => {
+      this._tracks = data.map(trackData => {
+        const mediaSource = this._elemWrapper.createWriteStream(trackData.mime)
+        mediaSource.on('error', err => {
+          this._elemWrapper.error(err)
+        })
+        const track = {
+          muxed: null,
+          mediaSource,
+          initFlushed: false,
+          onInitFlushed: null
+        }
+        mediaSource.write(trackData.init, err => {
+          track.initFlushed = true
+          if (track.onInitFlushed) {
+            track.onInitFlushed(err)
           }
-          file.getBlob(function (err, blob) { if (err) reject(err); else { var url = URL.createObjectURL(blob); elem.src = url; resolve(elem); } });
-        } catch (e) { reject(e); }
-      });
+        })
+        return track
+      })
+
+      if (this._waitingFired || this._elem.preload === 'auto') {
+        this._pump()
+      }
+    })
+
+    this._muxer.on('error', err => {
+      this._elemWrapper.error(err)
+    })
+  },
+  _pump () {
+    const muxed = this._muxer.seek(this._elem.currentTime, !this._tracks)
+
+    this._tracks.forEach((track, i) => {
+      const pumpTrack = () => {
+        if (track.muxed) {
+          track.muxed.destroy()
+          track.mediaSource = this._elemWrapper.createWriteStream(track.mediaSource)
+          track.mediaSource.on('error', err => {
+            this._elemWrapper.error(err)
+          })
+        }
+        track.muxed = muxed[i]
+        pump(track.muxed, track.mediaSource)
+      }
+      if (!track.initFlushed) {
+        track.onInitFlushed = err => {
+          if (err) {
+            this._elemWrapper.error(err)
+            return
+          }
+          pumpTrack()
+        }
+      } else {
+        pumpTrack()
+      }
+    })
+  },
+  destroy () {
+    if (this.destroyed) {
+      return
+    }
+    this.destroyed = true
+
+    this._elem.removeEventListener('waiting', this._onWaiting)
+    this._elem.removeEventListener('error', this._onError)
+
+    if (this._tracks) {
+      this._tracks.forEach(track => {
+        if (track.muxed) {
+          track.muxed.destroy()
+        }
+      })
     }
 
-    return Promise.reject(new Error('No streaming APIs available (streamTo/appendTo/getBlob).'));
-  };
+    this._elem.src = ''
+  }
+}
 
-  VideoStream.prototype._pump = function () {
-    if (!this._muxer || !this._tracks) return;
-    var muxed = this._muxer.seek(this._elem.currentTime || 0, !this._tracks);
-    var self = this;
-    this._tracks.forEach(function (track, i) {
-      if (track.muxed && typeof track.muxed.destroy === 'function') try { track.muxed.destroy(); } catch (e) {}
-      track.muxed = muxed[i];
-      if (!track.muxed) return;
-      if (typeof track.muxed.on === 'function' && track.writer && typeof track.writer.write === 'function') {
-        track.muxed.on('data', function (chunk) { try { track.writer.write(chunk, function () {}); } catch (e) { console.error(e); } });
-        track.muxed.on('end', function () {});
-        track.muxed.on('error', function (err) { console.error('Muxed stream error', err); });
-      } else if (typeof track.muxed.pipe === 'function') {
-        try {
-          track.muxed.on('data', function (d) { track.writer.write(d, function () {}); });
-          track.muxed.on('end', function () {});
-          track.muxed.on('error', function (err) { console.error(err); });
-        } catch (e) { console.error(e); }
-      }
-    });
-  };
-
-  VideoStream.prototype.destroy = function () {
-    if (this._destroyed) return;
-    this._destroyed = true;
-    try { this._elem.removeEventListener('waiting', this._onWaiting); this._elem.removeEventListener('error', this._onError); } catch (e) {}
-    try { if (this._muxer && typeof this._muxer.destroy === 'function') this._muxer.destroy(); } catch (e) {}
-    try { if (this._elem && this._elem.src) { try { URL.revokeObjectURL(this._elem.src); } catch (e) {} this._elem.removeAttribute('src'); this._elem.load && this._elem.load(); } } catch (e) {}
-  };
-
-  return VideoStream;
-}));
+module.exports = VideoStream
