@@ -1,20 +1,16 @@
-# WebSocket tracker list for browser WebTorrent (cleaned + useful defaults)
-# Keep only WebSocket trackers (wss/ws) for browser compatibility.
-# Lines starting with # are ignored when parsed.
+# WebSocket tracker list for browser WebTorrent (wss/ws only)
+# Keep only WebSocket trackers (wss or ws) for browser compatibility.
+# Comments (lines starting with #) are ignored.
 
 wss://tracker.webtorrent.dev:443
 wss://tracker.ghostchu-services.top:443/announce
 wss://tracker.files.fm:7073/announce
 wss://tracker.btorrent.xyz:443
+# The following are ws (non-TLS) — on HTTPS pages these may be blocked. Prefer wss if available.
 ws://tracker.ghostchu-services.top:80/announce
 ws://tracker.files.fm:7072/announce
 
-# Added common public WebSocket trackers
+# Extra reliable public WebSocket trackers
 wss://tracker.webtorrent.io
 wss://tracker.openwebtorrent.com
 wss://tracker.fastcast.nz
-
-# Notes:
-# - Browser clients require WSS/WS trackers. UDP trackers are not usable in-browser.
-# - Some trackers may be intermittently offline; keep multiple trackers for redundancy.
-# - If you host your own tracker, add it above (wss://your-tracker:port/path).
