@@ -1,61 +1,148 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TorDirect</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TorDirect</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-    <header>
-        <img src="logo.png" alt="My Torrent Client - Logo and Title" class="logo-image">
-        <h1>TorDirect - Your Personal Torrent Web Client</h1>
-        <!-- Maybe add a logo or subtitle here later -->
-    </header>
+  <header>
+    <img src="logo.png" alt="My Torrent Client - Logo and Title" class="logo-image" />
+    <h1>TorDirect - Your Personal Torrent Web Client</h1>
+  </header>
 
-    <section class="hero">
-        <h2>Peer-to-Peer File Sharing</h2>
-        <p class="subtitle">Download & Stream Torrents Directly in Your Browser</p>
-        <div class="input-area">
-            <input type="text" id="torrentIdInput" placeholder="Paste Magnet Link or Info Hash...">
-            <label class="file-label">
-                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-up" viewBox="0 0 16 16"> <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707V11.5z"/> <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/> </svg> Or Choose File</span>
-                <input type="file" id="torrentFileInput" accept=".torrent">
-            </label>
-            <button id="startButton">Start Transfer</button>
-        </div>
-         <p class="disclaimer"><strong>Disclaimer:</strong> Only use this tool for content you have the legal right to share and download. Downloading copyrighted material without permission may be illegal.</p>
-    </section>
+  <section class="hero">
+    <h2>Peer-to-Peer File Sharing</h2>
+    <p class="subtitle">Download & Stream Torrents Directly in Your Browser</p>
+    <div class="input-area">
+      <input type="text" id="torrentIdInput" placeholder="Paste Magnet Link or Info Hash..." />
+      <label class="file-label">
+        <span>
+          <!-- icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+               class="bi bi-file-earmark-arrow-up" viewBox="0 0 16 16">
+            <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707V11.5z"/>
+            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+          </svg>
+          Or Choose File
+        </span>
+        <input type="file" id="torrentFileInput" accept=".torrent" />
+      </label>
+      <button id="startButton">Start Transfer</button>
+    </div>
+    <p class="disclaimer"><strong>Disclaimer:</strong> Only use this tool for content you have the legal right to share and download. Downloading copyrighted material without permission may be illegal.</p>
+  </section>
 
-    <main class="content-area">
-        <div id="status" class="content-box">
-            <h2>Status</h2>
-            <div id="logs">Ready.</div>
-            <div id="progress"></div>
-            <div id="peers">Peers: 0</div>
-        </div>
+  <main class="content-area">
+    <div id="status" class="content-box">
+      <h2>Status</h2>
+      <div id="logs">Ready.</div>
+      <div id="progress"></div>
+      <div id="peers">Peers: 0</div>
+    </div>
 
-        <div id="files" class="content-box">
-            <h2>Files</h2>
-            <ul id="fileList"></ul>
-        </div>
+    <div id="files" class="content-box">
+      <h2>Files</h2>
+      <ul id="fileList"></ul>
+    </div>
 
-        <div id="player" class="content-box">
-            <h2>Streaming Player</h2>
-            <!-- Video/Audio tags will be appended here -->
-        </div>
-    </main>
+    <div id="player" class="content-box">
+      <h2>Streaming Player</h2>
+      <h3 style="color:green;">Note: WebTorrent dependency will be loaded before the app starts.</h3>
+      <!-- Video/Audio tags will be appended here -->
+    </div>
+  </main>
 
-    <footer>
-        <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>. Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
-    </footer>
+  <footer>
+    <p>Powered by <a href="https://webtorrent.io/" target="_blank" rel="noopener noreferrer">WebTorrent</a>.
+      Designed and developed by <a href="https://github.com/devilGamer5802">devilGamer5802</a></p>
+  </footer>
 
-    <!-- Include specific WebTorrent library version (pinned to v2.8.4) -->
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@2.8.3/webtorrent.min.js"></script>
-    <!-- Your main application script (already updated to work with modern WebTorrent) -->
-    <script src="script.js"></script>
+  <!--
+    Smart loader: tries multiple CDNs (jsdelivr, unpkg) and then a local fallback (webtorrent.min.js).
+    When a WebTorrent bundle is successfully loaded, it injects your app script (script.fixed.js).
+    Replace script.fixed.js with script.js if you prefer that filename.
+  -->
+  <script>
+    (function () {
+      // CDN fallbacks, in order
+      const urls = [
+        'https://cdn.jsdelivr.net/npm/webtorrent@2.8.4/webtorrent.min.js',
+        'https://unpkg.com/webtorrent@2.8.4/webtorrent.min.js'
+      ];
+
+      // Local fallback filename - keep a copy of webtorrent.min.js in your project root if you need offline
+      const localFallback = 'webtorrent.min.js';
+
+      function appendScript(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.crossOrigin = 'anonymous';
+          s.onload = () => resolve(src);
+          s.onerror = () => reject(new Error('Failed to load ' + src));
+          document.head.appendChild(s);
+        });
+      }
+
+      async function loadLibrary() {
+        const logsEl = document.getElementById('logs');
+        function writeLog(t) { if (logsEl) logsEl.innerHTML = `[${new Date().toLocaleTimeString()}] ${t}<br>` + logsEl.innerHTML; }
+
+        writeLog('Attempting to load WebTorrent library from CDN(s)...');
+        for (const u of urls) {
+          try {
+            await appendScript(u);
+            writeLog('Loaded WebTorrent from: ' + u);
+            if (window.WebTorrent) return true;
+          } catch (e) {
+            console.warn(e);
+            writeLog('Failed to load: ' + u);
+          }
+        }
+
+        // Try local fallback
+        try {
+          await appendScript(localFallback);
+          writeLog('Loaded WebTorrent from local fallback: ' + localFallback);
+          if (window.WebTorrent) return true;
+        } catch (e) {
+          console.error(e);
+          writeLog('Local fallback failed: ' + localFallback);
+        }
+
+        // All attempts failed
+        writeLog('Fatal: Could not load WebTorrent library. App will not start.');
+        return false;
+      }
+
+      // Load library, then the app script
+      (async function () {
+        const ok = await loadLibrary();
+        if (!ok) {
+          // Show a visible, clear message too
+          const logsEl = document.getElementById('logs');
+          if (logsEl) {
+            logsEl.innerHTML = '<span style="color:red">FATAL: WebTorrent library could not be loaded. Check network or provide webtorrent.min.js locally.</span><br>' + logsEl.innerHTML;
+          } else {
+            alert('FATAL: WebTorrent library could not be loaded. Check network or provide webtorrent.min.js locally.');
+          }
+          return;
+        }
+
+        // Inject your app script *after* library loaded.
+        // If your app file is named 'script.js', change the filename below.
+        const appScript = document.createElement('script');
+        appScript.src = 'script.fixed.js';
+        appScript.onload = function () { console.log('App script loaded'); };
+        appScript.onerror = function () { console.error('Failed to load app script (script.fixed.js)'); var logsEl = document.getElementById('logs'); if (logsEl) logsEl.innerHTML='Failed to load app script (script.fixed.js).<br>'+logsEl.innerHTML; };
+        document.body.appendChild(appScript);
+      })();
+    })();
+  </script>
 </body>
 </html>
